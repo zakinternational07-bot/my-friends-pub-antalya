@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Меню — My Friends Pub Antalya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body data-lang="ru" class="photo-bg" style="--page-bg-image: url('../assets/images/menu-bg.jpg');">
+  <header class="site-header">
+    <a class="logo" href="index.html">My Friends <span>Pub</span></a>
+  </header>
+
+  <main class="container section">
+    <a class="back-link" href="index.html">← На главную</a>
+    <h1>Меню</h1>
+
+    <div class="lang-switch">
+      <a class="active" href="menu-ru.html">RU</a>
+      <a href="menu-en.html">EN</a>
+      <a href="menu-tr.html">TR</a>
+    </div>
+
+    <div class="menu-gallery" id="menu-gallery"
+      data-base="../assets/images/menu/"
+      data-pages="1,2,3,4,6,7,8,9,10,11,12,13,14,15,16,17"
+      data-alt="Меню, страница"
+      data-close-label="Закрыть"
+      data-zoom-hint="Нажмите, чтобы увеличить">
+      <button class="menu-gallery-arrow" id="menu-gallery-prev" aria-label="Предыдущая страница">‹</button>
+      <div class="menu-gallery-frame">
+        <img id="menu-gallery-img" alt="Меню" />
+      </div>
+      <button class="menu-gallery-arrow" id="menu-gallery-next" aria-label="Следующая страница">›</button>
+    </div>
+    <p class="menu-gallery-counter" id="menu-gallery-counter"></p>
+  </main>
+
+  <footer class="site-footer">My Friends Pub Antalya</footer>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/menu-gallery.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Бронирование мест — My Friends Pub Antalya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body class="brick-bg">
+  <div class="test-mode-banner">ТЕСТОВЫЙ РЕЖИМ — реальная оплата не производится</div>
+
+  <header class="site-header">
+    <a class="logo" href="index.html">My Friends <span>Pub</span></a>
+  </header>
+
+  <main class="container section">
+    <a class="back-link" href="event.html" id="back-to-event">← К мероприятию</a>
+    <h1>Выбор мест</h1>
+    <p id="booking-event-title" class="tag"></p>
+
+    <div class="hall-legend">
+      <span><i class="legend-dot" style="background:var(--status-free)"></i>Свободно</span>
+      <span><i class="legend-dot" style="background:var(--accent-red-light)"></i>Выбрано вами</span>
+      <span><i class="legend-dot" style="background:var(--status-held)"></i>Бронируется</span>
+      <span><i class="legend-dot" style="background:var(--status-taken)"></i>Занято</span>
+    </div>
+
+    <div class="hall-map" id="hall-map"></div>
+
+    <div class="card booking-summary" id="booking-summary">Выберите свободные места на схеме</div>
+
+    <form id="booking-form" class="card" style="padding:20px;margin-top:20px;">
+      <div id="booking-error"></div>
+      <div class="form-field">
+        <label for="name">Имя</label>
+        <input type="text" id="name" name="name" required />
+      </div>
+      <div class="form-field">
+        <label for="email">Email (на него придёт билет)</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+      <button type="submit" class="btn btn-block" disabled>Оплатить билеты</button>
+    </form>
+  </main>
+
+  <footer class="site-footer">My Friends Pub Antalya</footer>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/booking.js"></script>
+  <script>
+    (function () {
+      var id = new URLSearchParams(window.location.search).get('event');
+      if (id) document.getElementById('back-to-event').href = 'event.html?id=' + id;
+    })();
+  </script>
+</body>
+</html>

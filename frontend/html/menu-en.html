@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menu — My Friends Pub Antalya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body data-lang="en" class="photo-bg" style="--page-bg-image: url('../assets/images/menu-bg.jpg');">
+  <header class="site-header">
+    <a class="logo" href="index.html">My Friends <span>Pub</span></a>
+  </header>
+
+  <main class="container section">
+    <a class="back-link" href="index.html">← Home</a>
+    <h1>Menu</h1>
+
+    <div class="lang-switch">
+      <a href="menu-ru.html">RU</a>
+      <a class="active" href="menu-en.html">EN</a>
+      <a href="menu-tr.html">TR</a>
+    </div>
+
+    <div class="menu-gallery" id="menu-gallery"
+      data-base="../assets/images/menu-en/"
+      data-pages="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"
+      data-alt="Menu, page"
+      data-close-label="Close"
+      data-zoom-hint="Tap to enlarge">
+      <button class="menu-gallery-arrow" id="menu-gallery-prev" aria-label="Previous page">‹</button>
+      <div class="menu-gallery-frame">
+        <img id="menu-gallery-img" alt="Menu" />
+      </div>
+      <button class="menu-gallery-arrow" id="menu-gallery-next" aria-label="Next page">›</button>
+    </div>
+    <p class="menu-gallery-counter" id="menu-gallery-counter"></p>
+  </main>
+
+  <footer class="site-footer">My Friends Pub Antalya</footer>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/menu-gallery.js"></script>
+</body>
+</html>

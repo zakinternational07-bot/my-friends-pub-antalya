@@ -1,0 +1,217 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-white);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.5em;
+}
+
+h1 { font-size: clamp(2rem, 6vw, 3.4rem); }
+h2 { font-size: clamp(1.5rem, 4vw, 2.2rem); }
+h3 { font-size: 1.3rem; }
+
+p { margin: 0 0 1em; color: var(--text-muted); }
+
+a { color: var(--accent-red-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+img { max-width: 100%; display: block; }
+
+.container {
+  width: 100%;
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.brick-bg {
+  background-color: var(--bg-dark);
+  background-image:
+    linear-gradient(var(--bg-dark), var(--bg-dark)),
+    repeating-linear-gradient(
+      0deg,
+      var(--brick-line) 0, var(--brick-line) 2px,
+      transparent 2px, transparent 34px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--brick-line) 0, var(--brick-line) 2px,
+      transparent 2px, transparent 68px
+    );
+  background-blend-mode: normal;
+}
+
+/* Фоновая фотография страницы (вместо кирпичного паттерна) — размытая,
+   с тёмным градиентом поверх для читаемости. Картинка задаётся через
+   переменную --page-bg-image в инлайн-style на <body>, чтобы один и тот
+   же класс работал с разными фото на разных страницах. Слои — position:
+   fixed, поэтому фон не двигается при скролле и без труда покрывает всю
+   длину страницы, а не только первый экран. */
+.photo-bg {
+  position: relative;
+}
+.photo-bg::before {
+  content: '';
+  position: fixed;
+  inset: -20px;
+  background-image: var(--page-bg-image);
+  background-size: cover;
+  background-position: center;
+  filter: blur(4px);
+  transform: scale(1.04);
+  z-index: -2;
+}
+.photo-bg::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(rgba(10, 8, 7, 0.7), rgba(10, 8, 7, 0.88));
+  z-index: -1;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px 20px;
+  position: relative;
+  z-index: 5;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 4vw, 1.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-white);
+}
+
+.logo span { color: var(--accent-red-light); }
+
+.btn {
+  display: inline-block;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 32px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  background: var(--accent-red);
+  color: var(--text-white);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn:hover { background: var(--accent-red-light); text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { background: var(--status-taken); cursor: not-allowed; }
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--accent-red);
+  color: var(--text-white);
+}
+.btn-outline:hover { background: var(--accent-red); }
+
+.btn-block { display: block; width: 100%; text-align: center; }
+
+.tag {
+  display: inline-block;
+  background: var(--accent-red);
+  color: var(--text-white);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.section {
+  padding: 60px 0;
+}
+
+.lang-switch {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 30px;
+}
+
+.lang-switch a {
+  padding: 8px 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.lang-switch a.active {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+  color: var(--text-white);
+}
+
+/* Компактный вариант — в правом верхнем углу шапки (например, на главной) */
+.lang-switch-header {
+  margin: 0;
+  gap: 6px;
+}
+
+.lang-switch-header a {
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  background: rgba(20, 18, 16, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.site-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 30px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 8px 12px 8px 4px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .section { padding: 36px 0; }
+  .container { padding: 0 24px; }
+}

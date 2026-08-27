@@ -1,0 +1,6 @@
+node_modules/
+backend/.env
+backend/data/*.sqlite*
+backend/data/emails/*.html
+.DS_Store
+cloudflared.exe

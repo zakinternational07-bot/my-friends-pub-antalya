@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>План зала — Админка My Friends Pub Antalya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../css/variables.css" />
+  <link rel="stylesheet" href="../../css/base.css" />
+  <link rel="stylesheet" href="../../css/components.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <nav class="admin-nav" id="admin-nav"></nav>
+    <main class="admin-main">
+      <h1>План зала</h1>
+      <p>Каждое место — объект с полями <code>table_label</code>, <code>seat_number</code>,
+        <code>pos_x</code>, <code>pos_y</code> (проценты 0–100 внутри схемы). Сохранение
+        полностью заменяет текущий план — брони на существующие ID мест не переносятся
+        автоматически, редактируйте между мероприятиями.</p>
+      <p id="hall-error" class="form-error" style="display:none;"></p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <form id="hall-form">
+          <textarea id="hall-json" rows="24" style="width:100%;font-family:monospace;font-size:0.85rem;background:var(--bg-panel-light);color:var(--text-white);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:12px;"></textarea>
+          <button type="submit" class="btn" style="margin-top:12px;">Сохранить план зала</button>
+        </form>
+        <div>
+          <p>Предпросмотр:</p>
+          <div class="hall-map" id="hall-preview"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/api.js"></script>
+  <script src="../../js/main.js"></script>
+  <script src="../../js/admin/nav.js"></script>
+  <script src="../../js/admin/hall.js"></script>
+</body>
+</html>

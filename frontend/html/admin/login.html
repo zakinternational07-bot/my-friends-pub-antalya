@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Вход в админку — My Friends Pub Antalya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../css/variables.css" />
+  <link rel="stylesheet" href="../../css/base.css" />
+  <link rel="stylesheet" href="../../css/components.css" />
+</head>
+<body>
+  <div class="login-shell">
+    <div class="card login-card">
+      <h1 style="font-size:1.4rem;">Вход в админку</h1>
+      <p id="login-error" class="form-error" style="display:none;"></p>
+      <form id="login-form">
+        <div class="form-field">
+          <label for="username">Логин</label>
+          <input type="text" id="username" name="username" required autofocus />
+        </div>
+        <div class="form-field">
+          <label for="password">Пароль</label>
+          <input type="password" id="password" name="password" required />
+        </div>
+        <button type="submit" class="btn btn-block">Войти</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../js/api.js"></script>
+  <script src="../../js/main.js"></script>
+  <script src="../../js/admin/login.js"></script>
+</body>
+</html>
