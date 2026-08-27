@@ -1,10 +1,12 @@
 // Просмотрщик готового дизайнерского меню (сканы/экспорт страниц как
-// картинки) со стрелками влево/вправо, как в разделе меню на старом сайте.
-// Список страниц и путь к картинкам задаются атрибутами на #menu-gallery
-// (data-base, data-pages, data-alt, data-close-label, data-zoom-hint),
-// чтобы один и тот же скрипт работал для всех языковых версий меню.
-// Тап по странице открывает её на весь экран (для гостей с плохим
-// зрением) — с крестиком в правом верхнем углу, чтобы выйти.
+// картинки). Список страниц и путь к картинкам задаются атрибутами на
+// #menu-gallery (data-base, data-pages, data-alt, data-close-label,
+// data-zoom-hint), чтобы один и тот же скрипт работал для всех языковых
+// версий меню. Тап по странице открывает её на весь экран (для гостей с
+// плохим зрением) — с крестиком в правом верхнем углу, чтобы выйти.
+// Листание везде зациклено: с последней страницы — сразу на первую и
+// наоборот. В полноэкранном режиме отдельных стрелок нет — тап по
+// правой половине картинки листает вперёд, по левой — назад.
 document.addEventListener('DOMContentLoaded', () => {
   const viewer = document.getElementById('menu-gallery');
   if (!viewer) return;
@@ -28,9 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function preload(i) {
-    if (i < 0 || i >= PAGE_NUMBERS.length) return;
+    const wrapped = (i + PAGE_NUMBERS.length) % PAGE_NUMBERS.length;
     const img = new Image();
-    img.src = pageSrc(i);
+    img.src = pageSrc(wrapped);
   }
 
   function render() {
@@ -39,8 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     imgEl.src = pageSrc(index);
     imgEl.alt = alt;
     counterEl.textContent = `${index + 1} / ${PAGE_NUMBERS.length}`;
-    prevBtn.disabled = index === 0;
-    nextBtn.disabled = index === PAGE_NUMBERS.length - 1;
     preload(index - 1);
     preload(index + 1);
 
@@ -48,16 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
       lightboxImg.src = pageSrc(index);
       lightboxImg.alt = alt;
       lightboxCounter.textContent = `${index + 1} / ${PAGE_NUMBERS.length}`;
-      lightboxPrevBtn.disabled = index === 0;
-      lightboxNextBtn.disabled = index === PAGE_NUMBERS.length - 1;
     }
   }
 
   imgEl.addEventListener('load', () => imgEl.classList.add('loaded'));
 
+  // Листание зациклено: после последней страницы — снова первая, и наоборот.
   function goTo(newIndex) {
-    if (newIndex < 0 || newIndex >= PAGE_NUMBERS.length) return;
-    index = newIndex;
+    index = (newIndex + PAGE_NUMBERS.length) % PAGE_NUMBERS.length;
     render();
   }
 
@@ -70,13 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
   lightbox.setAttribute('role', 'dialog');
   lightbox.setAttribute('aria-modal', 'true');
   lightbox.hidden = true;
-  const prevLabel = prevBtn.getAttribute('aria-label') || 'Previous';
-  const nextLabel = nextBtn.getAttribute('aria-label') || 'Next';
   lightbox.innerHTML = `
     <button type="button" class="menu-lightbox-close" aria-label="${CLOSE_LABEL}">×</button>
-    <button type="button" class="menu-lightbox-arrow menu-lightbox-prev" aria-label="${prevLabel}">‹</button>
     <img class="menu-lightbox-img" alt="" />
-    <button type="button" class="menu-lightbox-arrow menu-lightbox-next" aria-label="${nextLabel}">›</button>
     <p class="menu-lightbox-counter"></p>
   `;
   document.body.appendChild(lightbox);
@@ -84,8 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const lightboxImg = lightbox.querySelector('.menu-lightbox-img');
   const lightboxCounter = lightbox.querySelector('.menu-lightbox-counter');
   const lightboxCloseBtn = lightbox.querySelector('.menu-lightbox-close');
-  const lightboxPrevBtn = lightbox.querySelector('.menu-lightbox-prev');
-  const lightboxNextBtn = lightbox.querySelector('.menu-lightbox-next');
 
   let lastFocused = null;
 
@@ -110,8 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
   lightbox.addEventListener('click', (e) => {
     if (e.target === lightbox) closeLightbox();
   });
-  lightboxPrevBtn.addEventListener('click', () => goTo(index - 1));
-  lightboxNextBtn.addEventListener('click', () => goTo(index + 1));
+
+  // Тап по правой половине картинки — вперёд, по левой — назад.
+  lightboxImg.addEventListener('click', (e) => {
+    const rect = lightboxImg.getBoundingClientRect();
+    const clickedRight = e.clientX - rect.left > rect.width / 2;
+    goTo(clickedRight ? index + 1 : index - 1);
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') goTo(index - 1);
@@ -120,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Свайп для тачскринов — работает и в обычном режиме, и в полноэкранном.
+  // preventDefault на touchend после свайпа глушит синтетический click,
+  // который иначе следом сработал бы как тап по левой/правой половине.
   function attachSwipe(el) {
     let touchStartX = null;
     el.addEventListener('touchstart', (e) => {
@@ -129,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (touchStartX == null) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
       if (Math.abs(dx) > 40) {
+        e.preventDefault();
         goTo(dx < 0 ? index + 1 : index - 1);
       }
       touchStartX = null;
