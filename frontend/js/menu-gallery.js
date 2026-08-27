@@ -172,8 +172,22 @@ document.addEventListener('DOMContentLoaded', () => {
   lightbox.addEventListener('touchmove', (e) => {
     if (e.touches.length === 2 && pinchStartDist) {
       e.preventDefault();
-      const newDist = touchDistance(e.touches[0], e.touches[1]);
-      scale = Math.min(4, Math.max(1, pinchStartScale * (newDist / pinchStartDist)));
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const newDist = touchDistance(t1, t2);
+      const newScale = Math.min(4, Math.max(1, pinchStartScale * (newDist / pinchStartDist)));
+
+      // Держим под пальцами ту же точку картинки, что была под ними до
+      // этого — иначе увеличение всегда шло бы от центра, а не от места,
+      // где реально сводят пальцы. rect берём ДО обновления scale, чтобы
+      // он ещё отражал текущий (предыдущий) масштаб/сдвиг.
+      const midX = (t1.clientX + t2.clientX) / 2;
+      const midY = (t1.clientY + t2.clientY) / 2;
+      const rect = lightboxImg.getBoundingClientRect();
+      const k = newScale / scale;
+      panX += (midX - rect.left) * (1 - k);
+      panY += (midY - rect.top) * (1 - k);
+      scale = newScale;
       applyTransform();
     } else if (panStart && e.touches.length === 1) {
       e.preventDefault();

@@ -273,7 +273,7 @@ body.menu-lightbox-active { overflow: hidden; }
   object-fit: contain;
   border-radius: var(--radius);
   cursor: pointer;
-  transform-origin: center center;
+  transform-origin: 0 0;
   touch-action: none;
 }
 
