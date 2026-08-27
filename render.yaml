@@ -1,0 +1,21 @@
+services:
+  - name: my-friends-pub-antalya
+    type: web
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: EMAIL_PROVIDER
+        value: console
+      - key: SEAT_HOLD_MINUTES
+        value: "10"
