@@ -147,6 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let tapStartX = null;
 
   lightbox.addEventListener('touchstart', (e) => {
+    // Жест должен начинаться на самой картинке — иначе тап по крестику
+    // или по тёмному фону вокруг тоже листал бы страницу вместо закрытия.
+    if (e.target !== lightboxImg) {
+      pinchStartDist = null;
+      panStart = null;
+      tapStartX = null;
+      return;
+    }
     if (e.touches.length === 2) {
       pinchStartDist = touchDistance(e.touches[0], e.touches[1]);
       pinchStartScale = scale;
