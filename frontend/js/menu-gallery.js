@@ -6,7 +6,8 @@
 // плохим зрением) — с крестиком в правом верхнем углу, чтобы выйти.
 // Листание везде зациклено: с последней страницы — сразу на первую и
 // наоборот. В полноэкранном режиме отдельных стрелок нет — тап по
-// правой половине картинки листает вперёд, по левой — назад.
+// правой половине картинки листает вперёд, по левой — назад, а двумя
+// пальцами можно увеличить картинку (pinch-to-zoom) и подвигать её.
 document.addEventListener('DOMContentLoaded', () => {
   const viewer = document.getElementById('menu-gallery');
   if (!viewer) return;
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
       lightboxImg.src = pageSrc(index);
       lightboxImg.alt = alt;
       lightboxCounter.textContent = `${index + 1} / ${PAGE_NUMBERS.length}`;
+      resetZoom();
     }
   }
 
@@ -103,8 +105,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === lightbox) closeLightbox();
   });
 
-  // Тап по правой половине картинки — вперёд, по левой — назад.
+  // Тап по правой половине картинки (мышью, не тачем) — вперёд, по левой — назад.
+  // На тачскринах это же решает touchend ниже; preventDefault там гасит
+  // синтетический click, чтобы страница не листалась дважды.
   lightboxImg.addEventListener('click', (e) => {
+    if (scale > 1) return;
     const rect = lightboxImg.getBoundingClientRect();
     const clickedRight = e.clientX - rect.left > rect.width / 2;
     goTo(clickedRight ? index + 1 : index - 1);
@@ -116,9 +121,85 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && lightboxOpen) closeLightbox();
   });
 
-  // Свайп для тачскринов — работает и в обычном режиме, и в полноэкранном.
-  // preventDefault на touchend после свайпа глушит синтетический click,
-  // который иначе следом сработал бы как тап по левой/правой половине.
+  // --- Pinch-to-zoom и панорамирование двумя/одним пальцем в полноэкранном режиме ---
+  let scale = 1;
+  let panX = 0;
+  let panY = 0;
+
+  function applyTransform() {
+    lightboxImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  }
+
+  function resetZoom() {
+    scale = 1;
+    panX = 0;
+    panY = 0;
+    lightboxImg.style.transform = '';
+  }
+
+  function touchDistance(t1, t2) {
+    return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+  }
+
+  let pinchStartDist = null;
+  let pinchStartScale = 1;
+  let panStart = null;
+  let tapStartX = null;
+
+  lightbox.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchStartDist = touchDistance(e.touches[0], e.touches[1]);
+      pinchStartScale = scale;
+      panStart = null;
+      tapStartX = null;
+    } else if (e.touches.length === 1) {
+      if (scale > 1) {
+        panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, panX, panY };
+      } else {
+        tapStartX = e.touches[0].clientX;
+      }
+    }
+  }, { passive: true });
+
+  lightbox.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist) {
+      e.preventDefault();
+      const newDist = touchDistance(e.touches[0], e.touches[1]);
+      scale = Math.min(4, Math.max(1, pinchStartScale * (newDist / pinchStartDist)));
+      applyTransform();
+    } else if (panStart && e.touches.length === 1) {
+      e.preventDefault();
+      panX = panStart.panX + (e.touches[0].clientX - panStart.x);
+      panY = panStart.panY + (e.touches[0].clientY - panStart.y);
+      applyTransform();
+    }
+  }, { passive: false });
+
+  lightbox.addEventListener('touchend', (e) => {
+    if (e.touches.length > 0) return; // ждём, пока отпустят все пальцы
+    pinchStartDist = null;
+
+    if (panStart) {
+      panStart = null;
+    } else if (tapStartX != null && scale === 1) {
+      const dx = e.changedTouches[0].clientX - tapStartX;
+      if (Math.abs(dx) > 40) {
+        e.preventDefault();
+        goTo(dx < 0 ? index + 1 : index - 1);
+      } else {
+        e.preventDefault();
+        const rect = lightboxImg.getBoundingClientRect();
+        const tappedRight = e.changedTouches[0].clientX - rect.left > rect.width / 2;
+        goTo(tappedRight ? index + 1 : index - 1);
+      }
+    }
+    tapStartX = null;
+
+    // Возвращаем к исходному размеру, если почти не увеличили.
+    if (scale < 1.05) resetZoom();
+  });
+
+  // Свайп для тачскринов на компактном (не полноэкранном) просмотрщике.
   function attachSwipe(el) {
     let touchStartX = null;
     el.addEventListener('touchstart', (e) => {
@@ -128,14 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (touchStartX == null) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
       if (Math.abs(dx) > 40) {
-        e.preventDefault();
         goTo(dx < 0 ? index + 1 : index - 1);
       }
       touchStartX = null;
     });
   }
   attachSwipe(viewer);
-  attachSwipe(lightbox);
 
   // Подсказка «нажмите, чтобы увеличить» на самой странице меню.
   const zoomHintEl = document.createElement('span');

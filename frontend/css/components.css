@@ -257,7 +257,11 @@
   align-items: center;
   justify-content: center;
   background: rgba(8, 7, 6, 0.95);
-  touch-action: pan-y;
+  /* Жесты (свайп/тап/пинч-зум) полностью обрабатываются в JS —
+     touch-action: none убирает нативную прокрутку/зум браузера, чтобы
+     они не конфликтовали с нашими обработчиками. */
+  touch-action: none;
+  overflow: hidden;
 }
 .menu-lightbox[hidden] { display: none; }
 
@@ -269,6 +273,8 @@ body.menu-lightbox-active { overflow: hidden; }
   object-fit: contain;
   border-radius: var(--radius);
   cursor: pointer;
+  transform-origin: center center;
+  touch-action: none;
 }
 
 .menu-lightbox-close {
