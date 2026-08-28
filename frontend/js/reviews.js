@@ -71,6 +71,13 @@
       const expanded = card.classList.toggle('is-expanded');
       moreBtn.textContent = expanded ? hideLabel : moreLabel;
       expandedCount += expanded ? 1 : -1;
+      if (!expanded) {
+        // На тач-устройствах (особенно iOS Safari) тап по кнопке внутри
+        // ленты может "залипнуть" как наведение мышью без соответствующего
+        // mouseleave — снимаем паузу по наведению явно, чтобы после
+        // сворачивания карточки лента гарантированно поехала дальше.
+        paused = false;
+      }
     });
   });
 
