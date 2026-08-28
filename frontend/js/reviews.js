@@ -76,8 +76,12 @@
 
   function tick(time) {
     if (lastFrameTime === null) lastFrameTime = time;
-    const dt = (time - lastFrameTime) / 1000;
+    let dt = (time - lastFrameTime) / 1000;
     lastFrameTime = time;
+    // Пока вкладка была в фоне (например, пока открыта ссылка "Проверить"
+    // в новом окне), кадры не приходили — не проматываем ленту рывком
+    // за всё это время одним скачком.
+    if (dt > 0.25) dt = 0;
     if (!dragging && !paused) {
       x = wrap(x - SPEED * dt);
       render();
@@ -88,6 +92,21 @@
 
   marquee.addEventListener('mouseenter', function () { paused = true; });
   marquee.addEventListener('mouseleave', function () { paused = false; });
+
+  // Если ссылка "Проверить" открылась в новой вкладке, курсор физически
+  // не пересекает границу ленты на этой странице — mouseleave не
+  // срабатывает, и paused/dragging могут "залипнуть". Поэтому при
+  // возврате фокуса на вкладку принудительно сбрасываем оба флага.
+  function resumeAutoScroll() {
+    paused = false;
+    onPointerUp();
+    lastFrameTime = null;
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') resumeAutoScroll();
+  });
+  window.addEventListener('focus', resumeAutoScroll);
+  window.addEventListener('pageshow', resumeAutoScroll);
 
   function pointerX(e) {
     return e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
