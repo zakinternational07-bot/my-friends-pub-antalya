@@ -145,11 +145,43 @@ function seedEvents() {
   console.log(`[seed] events seeded: ${events.length}`);
 }
 
+// В отличие от seedEvents (которая только заполняет пустую таблицу при
+// первом запуске), это конкретное мероприятие должно быть на сайте всегда —
+// пересоздаём/обновляем его по slug при каждом старте сервера, даже если
+// таблица events уже не пустая.
+function seedLiveMusicEvent() {
+  const event = {
+    title: 'LIVE MUSIC 🔥',
+    slug: 'live-music-nyc-hits',
+    event_date: '2026-08-28',
+    event_time: '20:00',
+    price: 0,
+    description_short: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
+    description_long: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
+    poster_image: '',
+    video_url: '/assets/video/live-music-nyc-hits.mp4',
+  };
+  db.prepare(`INSERT INTO events
+    (title, slug, event_date, event_time, price, description_short, description_long, poster_image, video_url)
+    VALUES (@title, @slug, @event_date, @event_time, @price, @description_short, @description_long, @poster_image, @video_url)
+    ON CONFLICT(slug) DO UPDATE SET
+      title = excluded.title,
+      event_date = excluded.event_date,
+      event_time = excluded.event_time,
+      price = excluded.price,
+      description_short = excluded.description_short,
+      description_long = excluded.description_long,
+      poster_image = excluded.poster_image,
+      video_url = excluded.video_url`).run(event);
+  console.log('[seed] "LIVE MUSIC" event ready');
+}
+
 function run() {
   seedAdmin();
   seedHall();
   seedMenu();
   seedEvents();
+  seedLiveMusicEvent();
 }
 
 if (require.main === module) {
