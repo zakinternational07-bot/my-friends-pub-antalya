@@ -17,11 +17,16 @@
     return avatarColors[Math.abs(hash) % avatarColors.length];
   }
 
-  // Текст самих отзывов не переводим (это цитаты гостей), а вот подпись
-  // на кнопке — часть интерфейса, поэтому подстраивается под язык страницы.
+  // Текст самих отзывов не переводим (это цитаты гостей), а вот подписи
+  // интерфейса — кнопка проверки и разворачивание длинного текста —
+  // подстраиваются под язык страницы.
   const VERIFY_LABELS = { ru: 'Проверить →', en: 'Verify →', tr: 'Doğrula →' };
+  const MORE_LABELS = { ru: 'ещё', en: 'more', tr: 'devamını gör' };
+  const LESS_LABELS = { ru: 'свернуть', en: 'less', tr: 'gizle' };
   const pageLang = (document.documentElement.lang || 'ru').slice(0, 2);
   const verifyLabel = VERIFY_LABELS[pageLang] || VERIFY_LABELS.ru;
+  const moreLabel = MORE_LABELS[pageLang] || MORE_LABELS.ru;
+  const lessLabel = LESS_LABELS[pageLang] || LESS_LABELS.ru;
 
   function cardHTML(review) {
     const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
@@ -38,6 +43,7 @@
         '</div>' +
         '<div class="review-stars">' + stars + '</div>' +
         '<p class="review-text">' + review.text + '</p>' +
+        '<button type="button" class="review-more" hidden>' + moreLabel + '</button>' +
         '<a class="review-verify" href="' + review.link + '" target="_blank" rel="noopener noreferrer">' + verifyLabel + '</a>' +
       '</article>'
     );
@@ -46,6 +52,21 @@
   const cardsHTML = window.REVIEWS_DATA.map(cardHTML).join('');
   // Дублируем карточки, чтобы лента прокручивалась бесшовно по кругу.
   track.innerHTML = cardsHTML + cardsHTML;
+
+  // Карточки всегда одной высоты — длинный отзыв обрезается в 4 строки,
+  // а кнопка "ещё" показывается только там, где текст реально не влез.
+  track.querySelectorAll('.review-text').forEach(function (textEl) {
+    const moreBtn = textEl.nextElementSibling;
+    if (!moreBtn || !moreBtn.classList.contains('review-more')) return;
+    if (textEl.scrollHeight - textEl.clientHeight <= 1) return;
+    moreBtn.hidden = false;
+    moreBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const expanded = textEl.classList.toggle('is-expanded');
+      moreBtn.textContent = expanded ? lessLabel : moreLabel;
+    });
+  });
 
   const SPEED = 36; // px/сек — скорость автопрокрутки ленты
   let setWidth = 0; // ширина одного (неудвоенного) набора карточек
@@ -113,6 +134,9 @@
   }
 
   function onPointerDown(e) {
+    // Внутри развёрнутого отзыва текст сам скроллится по вертикали —
+    // не перехватываем этот жест под горизонтальное перетаскивание ленты.
+    if (e.target.closest && e.target.closest('.review-text.is-expanded')) return;
     dragging = true;
     dragMoved = false;
     dragStartClientX = pointerX(e);
