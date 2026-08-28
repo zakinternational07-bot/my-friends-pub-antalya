@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const eventId = params.get('event');
   const mapEl = document.getElementById('hall-map');
+  const seatsLayerEl = document.getElementById('hall-seats');
   const titleEl = document.getElementById('booking-event-title');
   const summaryEl = document.getElementById('booking-summary');
   const formEl = document.getElementById('booking-form');
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderSeats() {
-    mapEl.innerHTML = seats.map((seat) => {
+    seatsLayerEl.innerHTML = seats.map((seat) => {
       const isSelected = selected.has(seat.id);
       const status = isSelected ? 'free' : seat.status;
       return `<div class="seat${isSelected ? ' selected' : ''}"

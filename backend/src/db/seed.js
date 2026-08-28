@@ -31,27 +31,85 @@ function tableSeats(tableLabel, centerX, centerY, count, radius = 4.5) {
   return seats;
 }
 
-function seedHall() {
-  const count = db.prepare('SELECT COUNT(*) as c FROM hall_seats').get().c;
-  if (count > 0) {
-    console.log('[seed] hall layout already present, skipping');
-    return;
-  }
-  const layout = [
-    ...tableSeats('Стол 1', 18, 20, 4),
-    ...tableSeats('Стол 2', 50, 20, 4),
-    ...tableSeats('Стол 3', 82, 20, 2),
-    ...tableSeats('Стол 4', 18, 55, 2),
-    ...tableSeats('VIP-диван', 50, 55, 6, 7),
-    ...tableSeats('Стол 6', 82, 55, 4),
-    ...tableSeats('Барная стойка', 50, 85, 6, 22),
+// Барные места — это уже сами по себе отдельные посадочные места (по одному
+// человеку на место), а не столик с несколькими стульями вокруг — поэтому
+// координаты задаются напрямую, без разброса вокруг центра.
+function barSeats(tableLabel, positions) {
+  return positions.map((pos, i) => ({
+    table_label: tableLabel,
+    seat_number: i + 1,
+    pos_x: pos.x,
+    pos_y: pos.y,
+  }));
+}
+
+// План зала на основе реальной схемы паба: слева столики на 4 места,
+// в центре — столик на 6 (Стол 15) и столики на 2, справа — барные места
+// (по одному месту) и сама барная стойка.
+function hallLayout() {
+  return [
+    // Левая колонна — столики на 4 места
+    ...tableSeats('Стол 6', 10, 12, 4),
+    ...tableSeats('Стол 5', 10, 27, 4),
+    ...tableSeats('Стол 4', 10, 42, 4),
+    ...tableSeats('Стол 3', 10, 57, 4),
+    ...tableSeats('Стол 2', 10, 72, 4),
+    ...tableSeats('Стол 1', 14, 90, 4),
+    // Средняя левая колонна — Стол 15 на 6 мест, остальные на 2
+    ...tableSeats('Стол 15', 30, 12, 6, 6.5),
+    ...tableSeats('Стол 10', 28, 30, 2, 3.5),
+    ...tableSeats('Стол 9', 28, 45, 2, 3.5),
+    ...tableSeats('Стол 8', 28, 60, 2, 3.5),
+    ...tableSeats('Стол 7', 30, 75, 2, 3.5),
+    ...tableSeats('Стол 16', 36, 90, 2, 3.5),
+    // Средняя правая колонна — Стол 14, 12, 11 на 4 места, Стол 13 на 2
+    ...tableSeats('Стол 14', 46, 27, 4),
+    ...tableSeats('Стол 13', 46, 42, 2, 3.5),
+    ...tableSeats('Стол 12', 46, 57, 4),
+    ...tableSeats('Стол 11', 46, 72, 4),
+    // Барные места — по одному месту на человека
+    ...barSeats('Бар', [
+      { x: 62, y: 27 },
+      { x: 62, y: 39 },
+      { x: 62, y: 51 },
+      { x: 62, y: 63 },
+      { x: 62, y: 75 },
+    ]),
   ];
-  const insert = db.prepare(
+}
+
+// В отличие от старой логики (сидировать план зала только один раз, пока
+// таблица пустая), план зала должен всегда соответствовать актуальной схеме
+// паба в коде — пересобираем его по ключу «столик + номер места» при каждом
+// старте сервера. Места из брони не трогаем: если на месте уже есть бронь,
+// а в новой схеме его больше нет, оставляем такое место как есть — иначе
+// нарушим внешний ключ booking_seats.seat_id и историю броней.
+function seedHall() {
+  const layout = hallLayout();
+  const findSeat = db.prepare('SELECT id FROM hall_seats WHERE table_label = ? AND seat_number = ?');
+  const insertSeat = db.prepare(
     'INSERT INTO hall_seats (table_label, seat_number, pos_x, pos_y) VALUES (@table_label, @seat_number, @pos_x, @pos_y)'
   );
-  const insertMany = db.transaction((rows) => rows.forEach((r) => insert.run(r)));
-  insertMany(layout);
-  console.log(`[seed] hall layout seeded: ${layout.length} seats`);
+  const updateSeat = db.prepare(
+    'UPDATE hall_seats SET pos_x = @pos_x, pos_y = @pos_y WHERE table_label = @table_label AND seat_number = @seat_number'
+  );
+  const hasBooking = db.prepare('SELECT 1 FROM booking_seats WHERE seat_id = ?');
+  const deleteSeat = db.prepare('DELETE FROM hall_seats WHERE id = ?');
+
+  const applyLayout = db.transaction((rows) => {
+    rows.forEach((seat) => {
+      const existing = findSeat.get(seat.table_label, seat.seat_number);
+      if (existing) updateSeat.run(seat); else insertSeat.run(seat);
+    });
+    const desiredKeys = new Set(rows.map((s) => `${s.table_label}::${s.seat_number}`));
+    const stale = db.prepare('SELECT id, table_label, seat_number FROM hall_seats').all()
+      .filter((s) => !desiredKeys.has(`${s.table_label}::${s.seat_number}`));
+    stale.forEach((s) => {
+      if (!hasBooking.get(s.id)) deleteSeat.run(s.id);
+    });
+  });
+  applyLayout(layout);
+  console.log(`[seed] hall layout ready: ${layout.length} seats`);
 }
 
 function seedMenu() {
