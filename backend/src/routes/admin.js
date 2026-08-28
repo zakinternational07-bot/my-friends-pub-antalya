@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db/connection');
 const requireAdmin = require('../middleware/requireAdmin');
+const { upload, publicPathFor } = require('../middleware/upload');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -27,6 +28,14 @@ router.get('/events/:id', (req, res) => {
   res.json(event);
 });
 
+// Одно поле «Описание» в админке — короткая версия для карточки афиши
+// считается отсюда же, чтобы не заставлять админа заполнять два текста.
+function splitDescription(description) {
+  const long = (description || '').trim();
+  const short = long.length > 140 ? `${long.slice(0, 140).trim()}…` : long;
+  return { description_short: short, description_long: long };
+}
+
 router.post('/events', (req, res) => {
   const e = req.body || {};
   if (!e.title || !e.event_date || !e.event_time) {
@@ -42,8 +51,7 @@ router.post('/events', (req, res) => {
     event_date: e.event_date,
     event_time: e.event_time,
     price: Number(e.price) || 0,
-    description_short: e.description_short || '',
-    description_long: e.description_long || '',
+    ...splitDescription(e.description),
     poster_image: e.poster_image || '',
     video_url: e.video_url || '',
   });
@@ -53,17 +61,40 @@ router.post('/events', (req, res) => {
 router.put('/events/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM events WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Мероприятие не найдено' });
-  const e = { ...existing, ...req.body };
+  const e = req.body || {};
+  const merged = {
+    ...existing,
+    title: e.title,
+    event_date: e.event_date,
+    event_time: e.event_time,
+    price: Number(e.price) || 0,
+    ...splitDescription(e.description),
+    poster_image: e.poster_image || '',
+    video_url: e.video_url || '',
+    id: req.params.id,
+  };
   db.prepare(`UPDATE events SET title=@title, slug=@slug, event_date=@event_date, event_time=@event_time,
     price=@price, description_short=@description_short, description_long=@description_long,
     poster_image=@poster_image, video_url=@video_url WHERE id=@id`
-  ).run({ ...e, price: Number(e.price) || 0, id: req.params.id });
+  ).run(merged);
   res.json(db.prepare('SELECT * FROM events WHERE id = ?').get(req.params.id));
 });
 
 router.delete('/events/:id', (req, res) => {
   db.prepare('DELETE FROM events WHERE id = ?').run(req.params.id);
   res.json({ success: true });
+});
+
+// Загрузка фото/видео для мероприятия. Возвращает путь, который админка
+// затем передаёт как poster_image (фото) или video_url (видео) при
+// создании/сохранении мероприятия.
+router.post('/events/upload', (req, res) => {
+  upload.single('media')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Файл не получен' });
+    const type = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+    res.json({ path: publicPathFor(req.file), type });
+  });
 });
 
 // ----- Menu categories -----

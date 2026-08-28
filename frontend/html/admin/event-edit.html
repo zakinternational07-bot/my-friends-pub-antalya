@@ -19,14 +19,19 @@
       <p id="event-form-error" class="form-error" style="display:none;"></p>
       <form id="event-form" class="card" style="padding:20px;max-width:600px;">
         <div class="form-field"><label>Название</label><input name="title" required /></div>
-        <div class="form-field"><label>Slug (латиницей, необязательно — сгенерируется сам)</label><input name="slug" /></div>
+        <div class="form-field"><label>Описание</label><textarea name="description" rows="5" placeholder="Что за мероприятие, для кого, что будет..."></textarea></div>
+
+        <div class="form-field">
+          <label>Фото или видео</label>
+          <div id="media-preview" class="media-upload-preview"></div>
+          <input type="file" id="media-input" accept="image/*,video/*" />
+          <p id="media-status" style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;"></p>
+          <button type="button" id="media-remove-btn" class="btn btn-outline" style="display:none;margin-top:8px;">Убрать медиафайл</button>
+        </div>
+
         <div class="form-field"><label>Дата</label><input type="date" name="event_date" required /></div>
         <div class="form-field"><label>Время</label><input type="time" name="event_time" required /></div>
         <div class="form-field"><label>Цена за место (₺)</label><input type="number" name="price" min="0" step="1" required /></div>
-        <div class="form-field"><label>Короткое описание (для карточки)</label><textarea name="description_short" rows="2"></textarea></div>
-        <div class="form-field"><label>Полное описание (для страницы мероприятия)</label><textarea name="description_long" rows="5"></textarea></div>
-        <div class="form-field"><label>Путь к постеру (assets/images/...)</label><input name="poster_image" /></div>
-        <div class="form-field"><label>Ссылка на видео (assets/video/... или внешняя)</label><input name="video_url" /></div>
         <button type="submit" class="btn">Сохранить</button>
       </form>
     </main>

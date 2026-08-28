@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     root.innerHTML = `
       <div class="event-detail-header">
-        <div class="event-detail-poster"></div>
+        <div class="event-detail-poster">
+          ${ev.poster_image ? `<img src="${escapeHtml(ev.poster_image)}" alt="" />` : ''}
+        </div>
         <div>
           <span class="tag">${formatDateHuman(ev.event_date)} · ${escapeHtml(ev.event_time)}</span>
           <h1>${escapeHtml(ev.title)}</h1>
