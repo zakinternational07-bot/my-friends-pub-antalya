@@ -21,7 +21,7 @@
   // интерфейса — кнопка проверки и разворачивание длинного текста —
   // подстраиваются под язык страницы.
   const VERIFY_LABELS = { ru: 'Проверить →', en: 'Verify →', tr: 'Doğrula →' };
-  const MORE_LABELS = { ru: 'ещё', en: 'more', tr: 'devamını gör' };
+  const MORE_LABELS = { ru: 'ещё', en: 'more', tr: 'devamı' };
   const LESS_LABELS = { ru: 'свернуть', en: 'less', tr: 'gizle' };
   const pageLang = (document.documentElement.lang || 'ru').slice(0, 2);
   const verifyLabel = VERIFY_LABELS[pageLang] || VERIFY_LABELS.ru;
