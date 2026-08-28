@@ -752,10 +752,6 @@ body.menu-lightbox-active { overflow: hidden; }
   cursor: grabbing;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .reviews-marquee { overflow-x: auto; }
-}
-
 .review-card {
   flex: 0 0 300px;
   background: var(--bg-panel);

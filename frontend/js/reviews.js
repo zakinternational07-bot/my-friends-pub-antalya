@@ -47,12 +47,6 @@
   // Дублируем карточки, чтобы лента прокручивалась бесшовно по кругу.
   track.innerHTML = cardsHTML + cardsHTML;
 
-  // Пользователям с prefers-reduced-motion автопрокрутку не включаем —
-  // лента остаётся обычным горизонтальным скроллом (см. CSS).
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    return;
-  }
-
   const SPEED = 36; // px/сек — скорость автопрокрутки ленты
   let setWidth = 0; // ширина одного (неудвоенного) набора карточек
   let x = 0; // текущий сдвиг ленты, всегда в диапазоне (-setWidth, 0]
