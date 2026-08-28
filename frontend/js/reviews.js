@@ -17,6 +17,12 @@
     return avatarColors[Math.abs(hash) % avatarColors.length];
   }
 
+  // Текст самих отзывов не переводим (это цитаты гостей), а вот подпись
+  // на кнопке — часть интерфейса, поэтому подстраивается под язык страницы.
+  const VERIFY_LABELS = { ru: 'Проверить →', en: 'Verify →', tr: 'Doğrula →' };
+  const pageLang = (document.documentElement.lang || 'ru').slice(0, 2);
+  const verifyLabel = VERIFY_LABELS[pageLang] || VERIFY_LABELS.ru;
+
   function cardHTML(review) {
     const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
     return (
@@ -32,7 +38,7 @@
         '</div>' +
         '<div class="review-stars">' + stars + '</div>' +
         '<p class="review-text">' + review.text + '</p>' +
-        '<a class="review-verify" href="' + review.link + '" target="_blank" rel="noopener noreferrer">Проверить →</a>' +
+        '<a class="review-verify" href="' + review.link + '" target="_blank" rel="noopener noreferrer">' + verifyLabel + '</a>' +
       '</article>'
     );
   }
