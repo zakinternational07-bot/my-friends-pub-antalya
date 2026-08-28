@@ -146,21 +146,10 @@ function seedEvents() {
 }
 
 // В отличие от seedEvents (которая только заполняет пустую таблицу при
-// первом запуске), это конкретное мероприятие должно быть на сайте всегда —
-// пересоздаём/обновляем его по slug при каждом старте сервера, даже если
+// первом запуске), эти конкретные мероприятия должны быть на сайте всегда —
+// пересоздаём/обновляем их по slug при каждом старте сервера, даже если
 // таблица events уже не пустая.
-function seedLiveMusicEvent() {
-  const event = {
-    title: 'LIVE MUSIC 🔥',
-    slug: 'live-music-nyc-hits',
-    event_date: '2026-08-28',
-    event_time: '20:00',
-    price: 0,
-    description_short: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
-    description_long: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
-    poster_image: '',
-    video_url: '/assets/video/live-music-nyc-hits.mp4',
-  };
+function upsertPersistentEvent(event) {
   db.prepare(`INSERT INTO events
     (title, slug, event_date, event_time, price, description_short, description_long, poster_image, video_url)
     VALUES (@title, @slug, @event_date, @event_time, @price, @description_short, @description_long, @poster_image, @video_url)
@@ -173,7 +162,32 @@ function seedLiveMusicEvent() {
       description_long = excluded.description_long,
       poster_image = excluded.poster_image,
       video_url = excluded.video_url`).run(event);
-  console.log('[seed] "LIVE MUSIC" event ready');
+  console.log(`[seed] "${event.title}" event ready`);
+}
+
+function seedPersistentEvents() {
+  upsertPersistentEvent({
+    title: 'LIVE MUSIC 🔥',
+    slug: 'live-music-nyc-hits',
+    event_date: '2026-08-28',
+    event_time: '20:00',
+    price: 0,
+    description_short: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
+    description_long: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
+    poster_image: '',
+    video_url: '/assets/video/live-music-nyc-hits.mp4',
+  });
+  upsertPersistentEvent({
+    title: 'DJ RasuLove',
+    slug: 'dj-rasulove',
+    event_date: '2026-08-30',
+    event_time: '21:00',
+    price: 0,
+    description_short: 'DJ музыка весь вечер, которая заставит вас танцевать 🪩',
+    description_long: 'DJ музыка весь вечер, которая заставит вас танцевать 🪩',
+    poster_image: '',
+    video_url: '/assets/video/dj-rasulove.mp4',
+  });
 }
 
 function run() {
@@ -181,7 +195,7 @@ function run() {
   seedHall();
   seedMenu();
   seedEvents();
-  seedLiveMusicEvent();
+  seedPersistentEvents();
 }
 
 if (require.main === module) {
