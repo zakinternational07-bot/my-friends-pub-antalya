@@ -188,6 +188,17 @@ function seedPersistentEvents() {
     poster_image: '',
     video_url: '/assets/video/dj-rasulove.mp4',
   });
+  upsertPersistentEvent({
+    title: 'Street Players',
+    slug: 'street-players',
+    event_date: '2026-08-28',
+    event_time: '20:00',
+    price: 300,
+    description_short: 'Ребята исполняют самые популярные песни улиц Нью-Йорка 🗽',
+    description_long: 'Ребята исполняют самые популярные песни улиц Нью-Йорка 🗽',
+    poster_image: '/assets/images/street-players.jpg',
+    video_url: '',
+  });
 }
 
 function run() {
