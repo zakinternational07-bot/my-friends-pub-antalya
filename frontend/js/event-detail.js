@@ -8,6 +8,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Автовоспроизведение со звуком браузеры блокируют всегда — видео
+  // стартует само, но без звука, и рядом кнопка «включить звук» на один тап.
+  function videoBlockHtml(url, videoId) {
+    return `
+      <div class="event-video-frame">
+        <video id="${videoId}" src="${escapeHtml(url)}" autoplay muted loop playsinline></video>
+        <button type="button" class="event-video-unmute" data-target="${videoId}" aria-label="Включить звук">🔇</button>
+      </div>
+    `;
+  }
+
+  function wireUnmuteButtons() {
+    root.querySelectorAll('.event-video-unmute').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const video = document.getElementById(btn.dataset.target);
+        if (!video) return;
+        video.muted = !video.muted;
+        btn.textContent = video.muted ? '🔇' : '🔊';
+      });
+    });
+  }
+
   try {
     const ev = await Api.get(`/api/events/${id}`);
     document.title = `${ev.title} — My Friends Pub Antalya`;
@@ -18,10 +40,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const posterHtml = ev.poster_image
       ? `<img src="${escapeHtml(ev.poster_image)}" alt="" />`
       : ev.video_url
-        ? `<video src="${escapeHtml(ev.video_url)}" controls playsinline></video>`
+        ? videoBlockHtml(ev.video_url, 'event-poster-video')
         : '';
     const videoHtml = (ev.poster_image && ev.video_url)
-      ? `<div class="event-video-wrap"><video controls src="${escapeHtml(ev.video_url)}" poster=""></video></div>`
+      ? `<div class="event-video-wrap">${videoBlockHtml(ev.video_url, 'event-extra-video')}</div>`
       : '';
 
     root.innerHTML = `
@@ -39,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       ${videoHtml}
     `;
+    wireUnmuteButtons();
   } catch (err) {
     root.innerHTML = `<p class="form-error">Не удалось загрузить мероприятие: ${escapeHtml(err.message)}</p>`;
   }
