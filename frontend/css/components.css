@@ -742,23 +742,17 @@ body.menu-lightbox-active { overflow: hidden; }
   display: flex;
   gap: 20px;
   width: max-content;
-  animation-name: reviews-scroll;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.reviews-marquee:hover .reviews-track,
-.reviews-marquee:focus-within .reviews-track {
-  animation-play-state: paused;
-}
-
-@keyframes reviews-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+.reviews-track.is-dragging {
+  cursor: grabbing;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reviews-track { animation: none; }
   .reviews-marquee { overflow-x: auto; }
 }
 
