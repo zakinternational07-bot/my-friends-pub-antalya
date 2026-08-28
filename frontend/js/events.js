@@ -9,8 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     root.innerHTML = `<div class="event-grid">${events.map((ev) => `
       <a class="card event-card" href="event.html?id=${ev.id}">
         <div class="event-card-photo">
-          ${ev.poster_image ? `<img src="${escapeHtml(ev.poster_image)}" alt="" />` : ''}
-          ${!ev.poster_image && ev.video_url ? '<span class="event-card-video-badge">▶</span>' : ''}
+          ${eventMediaHtml(ev)}
           <span class="event-card-date">${formatDateHuman(ev.event_date)}</span>
         </div>
         <div class="event-card-body">

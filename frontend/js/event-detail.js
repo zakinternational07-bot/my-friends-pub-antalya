@@ -12,14 +12,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ev = await Api.get(`/api/events/${id}`);
     document.title = `${ev.title} — My Friends Pub Antalya`;
 
-    const videoHtml = ev.video_url
+    // Если загружено и фото, и видео — фото идёт постером, а видео (запись
+    // с прошлых похожих мероприятий) отдельным блоком ниже. Если видео без
+    // фото — видео само становится постером, не прячется где-то внизу.
+    const posterHtml = ev.poster_image
+      ? `<img src="${escapeHtml(ev.poster_image)}" alt="" />`
+      : ev.video_url
+        ? `<video src="${escapeHtml(ev.video_url)}" controls playsinline></video>`
+        : '';
+    const videoHtml = (ev.poster_image && ev.video_url)
       ? `<div class="event-video-wrap"><video controls src="${escapeHtml(ev.video_url)}" poster=""></video></div>`
       : '';
 
     root.innerHTML = `
       <div class="event-detail-header">
         <div class="event-detail-poster">
-          ${ev.poster_image ? `<img src="${escapeHtml(ev.poster_image)}" alt="" />` : ''}
+          ${posterHtml}
         </div>
         <div>
           <span class="tag">${formatDateHuman(ev.event_date)} · ${escapeHtml(ev.event_time)}</span>
