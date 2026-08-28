@@ -765,6 +765,13 @@ body.menu-lightbox-active { overflow: hidden; }
   gap: 10px;
 }
 
+/* Развёрнутая карточка сама вырастает под полный текст отзыва —
+   остальные карточки в ряду при этом остаются прежнего размера. */
+.review-card.is-expanded {
+  height: auto;
+  align-self: flex-start;
+}
+
 .review-card-header {
   display: flex;
   align-items: center;
@@ -814,10 +821,11 @@ body.menu-lightbox-active { overflow: hidden; }
   -webkit-box-orient: vertical;
 }
 
-.review-text.is-expanded {
+.review-card.is-expanded .review-text {
   display: block;
   -webkit-line-clamp: unset;
-  overflow-y: auto;
+  overflow: visible;
+  flex: none;
 }
 
 .review-more {
