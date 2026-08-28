@@ -16,9 +16,7 @@ window.REVIEWS_DATA = [
     rating: 5,
     date: '27 августа 2026',
     text: 'Миллениальный оазис посреди жары. А вообще отличный бар, отличная кухня, отличный вид, отличный персонал, все отлично!',
-    // TODO: прислана та же ссылка, что и у отзыва Leisan Kamaletdinova —
-    // нужна отдельная ссылка "Поделиться отзывом" именно для этого отзыва.
-    link: 'https://maps.app.goo.gl/wEYoyHjNKoWJDBmdA?g_st=ic'
+    link: 'https://maps.app.goo.gl/KBCK9UcHYo6WUqJSA?g_st=ic'
   },
   {
     name: 'Olga Gubar',
