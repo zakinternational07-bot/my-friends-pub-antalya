@@ -1,7 +1,7 @@
 /* ---- Hero (home page) ---- */
 .hero {
   position: relative;
-  min-height: 100vh;
+  min-height: 88vh;
   display: flex;
   flex-direction: column;
   background: var(--bg-dark);
@@ -51,7 +51,7 @@
 
 .hero-content .subtitle {
   color: var(--text-muted);
-  margin-bottom: 40px;
+  margin-bottom: 28px;
   font-size: 1.1rem;
 }
 
