@@ -135,6 +135,9 @@ img { max-width: 100%; display: block; }
 }
 .btn-outline:hover { background: var(--accent-red); }
 
+.btn-telegram { background: #229ED9; }
+.btn-telegram:hover { background: #1b8cbf; }
+
 .btn-block { display: block; width: 100%; text-align: center; }
 
 .tag {

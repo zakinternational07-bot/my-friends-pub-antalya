@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     root.innerHTML = `
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Бронь</th><th>Мероприятие</th><th>Гость</th><th>Email</th><th>Сумма</th><th>Статус</th><th>Создана</th></tr></thead>
+          <thead><tr><th>Бронь</th><th>Мероприятие</th><th>Гость</th><th>Email</th><th>Сумма</th><th>Статус</th><th>Явка</th><th>Создана</th></tr></thead>
           <tbody>
             ${bookings.map((b) => `
               <tr>
@@ -18,9 +18,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${escapeHtml(b.customer_email)}</td>
                 <td>${b.total_price} ₺</td>
                 <td><span class="status-badge ${b.status}">${b.status}</span></td>
+                <td>${b.telegram_chat_id ? `<span class="status-badge ${b.attendance_status}">${b.attendance_status}</span>` : '<span style="color:var(--text-muted);">—</span>'}</td>
                 <td>${b.created_at}</td>
               </tr>
-            `).join('') || '<tr><td colspan="7">Броней пока нет</td></tr>'}
+            `).join('') || '<tr><td colspan="8">Броней пока нет</td></tr>'}
           </tbody>
         </table>
       </div>

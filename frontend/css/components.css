@@ -700,6 +700,9 @@ body.menu-lightbox-active { overflow: hidden; }
 .status-badge.held { background: rgba(217,164,65,0.2); color: var(--status-held); }
 .status-badge.paid { background: rgba(59,165,92,0.2); color: var(--status-free); }
 .status-badge.expired, .status-badge.cancelled { background: rgba(107,101,96,0.2); color: var(--status-taken); }
+.status-badge.pending { background: rgba(217,164,65,0.2); color: var(--status-held); }
+.status-badge.confirmed { background: rgba(59,165,92,0.2); color: var(--status-free); }
+.status-badge.declined { background: rgba(224,57,63,0.2); color: var(--accent-red-light); }
 
 .login-shell {
   min-height: 100vh;

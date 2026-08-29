@@ -19,3 +19,11 @@ services:
         value: console
       - key: SEAT_HOLD_MINUTES
         value: "10"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        value: mfp_antalya_bot
+      - key: TELEGRAM_STAFF_CHAT_ID
+        sync: false
+      - key: REMINDER_HOURS_BEFORE
+        value: "6"

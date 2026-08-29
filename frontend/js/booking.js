@@ -36,8 +36,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderSummary() {
     const count = selected.size;
     const total = event ? event.price * count : 0;
+    const totalText = event && event.price === 0 ? 'вход бесплатный' : `Сумма: <strong>${total} ₺</strong>`;
     summaryEl.innerHTML = count
-      ? `Выбрано мест: <strong>${count}</strong> · Сумма: <strong>${total} ₺</strong>`
+      ? `Выбрано мест: <strong>${count}</strong> · ${totalText}`
       : 'Выберите свободные места на схеме';
     formEl.querySelector('button[type="submit"]').disabled = count === 0;
   }
@@ -58,9 +59,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSeats();
   }
 
+  const submitBtn = formEl.querySelector('button[type="submit"]');
+  const isFreeEvent = () => event && event.price === 0;
+
   try {
     event = await Api.get(`/api/events/${eventId}`);
     titleEl.textContent = `${event.title} — ${formatDateHuman(event.event_date)} ${event.event_time}`;
+    if (isFreeEvent()) {
+      submitBtn.textContent = 'Подтвердить бронь в Telegram ✈';
+      submitBtn.classList.add('btn-telegram');
+      const banner = document.getElementById('test-mode-banner');
+      if (banner) banner.style.display = 'none';
+    }
     await loadSeats();
     renderSummary();
   } catch (err) {
@@ -104,7 +114,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (selected.size === 0) return;
     const name = formEl.name.value.trim();
     const email = formEl.email.value.trim();
-    const submitBtn = formEl.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try {
       const result = await Api.post('/api/bookings', {
@@ -113,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         name,
         email,
       });
-      window.location.href = result.paymentUrl;
+      window.location.href = isFreeEvent() && result.telegramUrl ? result.telegramUrl : result.paymentUrl;
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.className = 'form-error';

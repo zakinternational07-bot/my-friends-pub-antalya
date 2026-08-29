@@ -11,7 +11,11 @@ const bookingsRouter = require('./src/routes/bookings');
 const paymentsRouter = require('./src/routes/payments');
 const authRouter = require('./src/routes/auth');
 const adminRouter = require('./src/routes/admin');
+const telegramWebhookRouter = require('./src/routes/telegramWebhook');
+const rsvpRouter = require('./src/routes/rsvp');
 const { initWebSocket } = require('./src/ws/socket');
+const telegram = require('./src/services/telegram');
+const { startReminderScheduler } = require('./src/services/reminderScheduler');
 
 // Создаёт/обновляет админ-аккаунт и сидирует данные, если БД пустая.
 runSeed();
@@ -33,6 +37,8 @@ app.use('/api/bookings', bookingsRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/telegram', telegramWebhookRouter);
+app.use('/rsvp', rsvpRouter);
 
 const frontendDir = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendDir));
@@ -42,9 +48,14 @@ app.get('/', (req, res) => {
 });
 
 initWebSocket(server);
+startReminderScheduler();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`My Friends Pub Antalya backend running on http://localhost:${PORT}`);
   console.log('Тестовый режим: оплата и письма не настоящие (см. README).');
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL;
+  if (telegram.isConfigured() && publicBaseUrl) {
+    telegram.registerWebhook(publicBaseUrl);
+  }
 });

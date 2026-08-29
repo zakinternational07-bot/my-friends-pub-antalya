@@ -57,7 +57,13 @@ CREATE TABLE IF NOT EXISTS bookings (
   total_price REAL NOT NULL DEFAULT 0,
   hold_expires_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  paid_at TEXT
+  paid_at TEXT,
+  -- Telegram-подтверждение брони на бесплатные мероприятия (см. connection.js
+  -- для миграции этих колонок на уже существующих базах).
+  telegram_link_token TEXT UNIQUE,   -- payload в t.me/<bot>?start=<token>
+  telegram_chat_id TEXT,             -- chat_id, полученный после /start
+  attendance_status TEXT NOT NULL DEFAULT 'pending', -- pending | confirmed | declined
+  reminder_sent_at TEXT              -- когда отправили напоминание в день мероприятия
 );
 
 CREATE TABLE IF NOT EXISTS booking_seats (

@@ -1,8 +1,10 @@
 const express = require('express');
+const crypto = require('crypto');
 const db = require('../db/connection');
 const { computeHoldExpiryIso } = require('../services/seatHold');
 const { generateBookingRef } = require('../services/ticket');
 const { broadcastSeatUpdate } = require('../ws/socket');
+const telegram = require('../services/telegram');
 
 const router = express.Router();
 
@@ -45,18 +47,19 @@ router.post('/', (req, res) => {
       const bookingRef = generateBookingRef();
       const holdExpiresAt = computeHoldExpiryIso();
       const totalPrice = event.price * seatIds.length;
+      const telegramLinkToken = crypto.randomBytes(16).toString('hex');
 
       const bookingInfo = db.prepare(`
-        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at)
-        VALUES (?, ?, ?, ?, 'held', ?, ?)
-      `).run(eventId, bookingRef, name, email, totalPrice, holdExpiresAt);
+        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token)
+        VALUES (?, ?, ?, ?, 'held', ?, ?, ?)
+      `).run(eventId, bookingRef, name, email, totalPrice, holdExpiresAt, telegramLinkToken);
 
       const insertSeat = db.prepare(
         'INSERT INTO booking_seats (booking_id, seat_id, event_id) VALUES (?, ?, ?)'
       );
       seatIds.forEach((seatId) => insertSeat.run(bookingInfo.lastInsertRowid, seatId, eventId));
 
-      return { bookingRef, holdExpiresAt, totalPrice };
+      return { bookingRef, holdExpiresAt, totalPrice, telegramLinkToken };
     })();
 
     broadcastSeatUpdate(eventId);
@@ -65,6 +68,9 @@ router.post('/', (req, res) => {
       holdExpiresAt: result.holdExpiresAt,
       totalPrice: result.totalPrice,
       paymentUrl: `/html/payment.html?booking=${result.bookingRef}`,
+      // Для бесплатных мероприятий бронь подтверждается через Telegram, а
+      // не через (тестовую) оплату — см. фронтенд booking.js.
+      telegramUrl: event.price === 0 ? telegram.botDeepLink(result.telegramLinkToken) : null,
     });
   } catch (err) {
     if (err.message === 'SEATS_TAKEN') {
