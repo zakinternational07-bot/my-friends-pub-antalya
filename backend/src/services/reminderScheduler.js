@@ -30,7 +30,10 @@ async function sendDueReminders() {
   const hoursThreshold = reminderHoursBefore();
 
   for (const booking of bookings) {
-    const eventDateTime = new Date(`${booking.event_date}T${booking.event_time}:00`);
+    // event_date/event_time вводятся админом по местному времени Анталии
+    // (UTC+3, в Турции нет перехода на летнее время) — без явного оффсета
+    // Node трактовал бы "16:40" как UTC и ошибался на 3 часа.
+    const eventDateTime = new Date(`${booking.event_date}T${booking.event_time}:00+03:00`);
     const hoursUntil = (eventDateTime - now) / (1000 * 60 * 60);
     if (hoursUntil <= 0 || hoursUntil > hoursThreshold) continue;
 
