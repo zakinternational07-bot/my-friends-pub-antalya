@@ -122,7 +122,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         name,
         email,
       });
-      window.location.href = isFreeEvent() && result.telegramUrl ? result.telegramUrl : result.paymentUrl;
+      if (isFreeEvent() && result.telegramUrl) {
+        window.open(result.telegramUrl, '_blank', 'noopener');
+        formEl.innerHTML = `
+          <p class="form-success">Открыли Telegram в новой вкладке — нажмите там «Start», чтобы подтвердить бронь. Место удержано за вами 10 минут.</p>
+          <a class="btn btn-telegram btn-block" href="${result.telegramUrl}" target="_blank" rel="noopener">Открыть Telegram ещё раз ✈</a>
+        `;
+      } else {
+        window.location.href = result.paymentUrl;
+      }
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.className = 'form-error';

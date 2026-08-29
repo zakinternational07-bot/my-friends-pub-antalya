@@ -26,4 +26,4 @@ services:
       - key: TELEGRAM_STAFF_CHAT_ID
         sync: false
       - key: REMINDER_HOURS_BEFORE
-        value: "6"
+        value: "12"

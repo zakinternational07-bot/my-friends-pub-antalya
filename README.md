@@ -71,7 +71,7 @@ npm run dev
    брони.
 3. Раз в 10 минут (`backend/src/services/reminderScheduler.js`) сервер
    проверяет: если до мероприятия осталось ≤ `REMINDER_HOURS_BEFORE`
-   часов (по умолчанию 6) и напоминание ещё не отправлено — шлёт
+   часов (по умолчанию 12) и напоминание ещё не отправлено — шлёт
    сообщение с двумя кнопками-**ссылками** «✅ Подтверждаю» / «❌ Не смогу
    прийти», ведущими на `/rsvp/<бронь>/confirm` и `.../decline` на этом
    же сайте.
@@ -94,7 +94,7 @@ npm run dev
 TELEGRAM_BOT_TOKEN=...       # от @BotFather, секрет
 TELEGRAM_BOT_USERNAME=...    # без @
 TELEGRAM_STAFF_CHAT_ID=      # необязательно — куда слать уведомления об отменах
-REMINDER_HOURS_BEFORE=6
+REMINDER_HOURS_BEFORE=12
 PUBLIC_BASE_URL=...          # на Render не нужен — берётся из RENDER_EXTERNAL_URL сам
 ```
 
