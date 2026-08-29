@@ -27,4 +27,24 @@ for (const [column, sql] of Object.entries(migrations)) {
   if (!bookingColumns.includes(column)) db.exec(sql);
 }
 
+// ВРЕМЕННЫЙ сид для проверки Telegram-напоминаний (кнопки "Подтверждаю" /
+// "Не смогу прийти"). На бесплатном тарифе Render диск не сохраняется между
+// деплоями, поэтому событие пересоздаётся здесь при каждом старте сервера.
+// Удалить этот блок и тестовое мероприятие после того, как тест кнопок
+// пройден.
+const testEventSlug = 'test-knopki-2908';
+if (!db.prepare('SELECT 1 FROM events WHERE slug = ?').get(testEventSlug)) {
+  db.prepare(`INSERT INTO events
+    (title, slug, event_date, event_time, price, description_short, description_long, poster_image, video_url)
+    VALUES (?, ?, ?, ?, 0, ?, ?, '', '')`
+  ).run(
+    'ТЕСТ кнопок',
+    testEventSlug,
+    '2026-08-29',
+    '15:30',
+    'Тестовое мероприятие для проверки Telegram-напоминаний',
+    'Тестовое мероприятие для проверки Telegram-напоминаний'
+  );
+}
+
 module.exports = db;
