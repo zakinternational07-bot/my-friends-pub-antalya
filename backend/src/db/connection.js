@@ -41,7 +41,7 @@ if (!db.prepare('SELECT 1 FROM events WHERE slug = ?').get(testEventSlug)) {
     'TEST RESERVE',
     testEventSlug,
     '2026-08-29',
-    '16:40',
+    '17:00',
     'Тестовое мероприятие для проверки Telegram-напоминаний',
     'Тестовое мероприятие для проверки Telegram-напоминаний'
   );
