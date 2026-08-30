@@ -4,7 +4,6 @@
   min-height: 74vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-dark);
   overflow: hidden;
 }
 
