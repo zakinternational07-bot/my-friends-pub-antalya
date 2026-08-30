@@ -11,21 +11,25 @@
 /* Отдельный слой под фото — размытие применяется только к нему, чтобы
    текст и кнопки поверх остались чёткими. Расширен за края (inset:-20px)
    и немного увеличен (scale), чтобы блюр не оставлял размытую кромку/
-   прозрачные края по периметру. */
+   прозрачные края по периметру. position:fixed (как в .photo-bg) вместо
+   absolute — фон "прибит" к экрану и виден не только за hero, но и за
+   секцией отзывов ниже, а не обрезается по высоте .hero. */
 .hero-bg {
-  position: absolute;
+  position: fixed;
   inset: -20px;
   background-size: cover;
   background-position: center;
   filter: blur(4px);
   transform: scale(1.04);
+  z-index: -2;
 }
 
 .hero::after {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: linear-gradient(rgba(10, 8, 7, 0.55), rgba(10, 8, 7, 0.85));
+  z-index: -1;
 }
 
 .hero-content, .hero > .site-header {
