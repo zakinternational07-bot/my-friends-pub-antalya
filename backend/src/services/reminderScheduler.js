@@ -51,8 +51,16 @@ async function autoCancelBooking(booking) {
     .run(booking.id);
   broadcastSeatUpdate(booking.event_id);
 
+  // Сначала четверостишье (просили именно так), потом отдельным
+  // сообщением — то же самое понятным языком, без стихов.
   await telegram.sendMessage(booking.telegram_chat_id,
-    `К сожалению, мы не получили подтверждение и бронь на «<b>${booking.event_title}</b>» автоматически снята — место передано другим гостям.\n` +
+    'Мы вас ждали, час пробил,\n' +
+    'Только гость не приходил.\n' +
+    'Стол пришлось, увы, отдать —\n' +
+    'Будем рады вновь принять!'
+  );
+  await telegram.sendMessage(booking.telegram_chat_id,
+    `Ваша бронь на «<b>${booking.event_title}</b>» снята из-за отсутствия подтверждения — место передано другим гостям.\n` +
     `Будем рады видеть вас на другом мероприятии 💛`
   );
 
