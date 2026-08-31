@@ -11,11 +11,8 @@ const router = express.Router();
 router.post('/', (req, res) => {
   const { eventId, seatIds, name, email, arrivalTime } = req.body || {};
 
-  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !email || !arrivalTime) {
-    return res.status(400).json({ error: 'Заполните имя, email, время прихода и выберите хотя бы одно место' });
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ error: 'Некорректный email' });
+  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !arrivalTime) {
+    return res.status(400).json({ error: 'Заполните имя, время прихода и выберите хотя бы одно место' });
   }
   if (!/^\d{2}:\d{2}$/.test(arrivalTime)) {
     return res.status(400).json({ error: 'Некорректное время прихода' });
@@ -23,6 +20,17 @@ router.post('/', (req, res) => {
 
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
   if (!event) return res.status(404).json({ error: 'Мероприятие не найдено' });
+
+  // Билет на почту шлём только за платные брони — на бесплатных подтверждение
+  // приходит в Telegram-бот, почта там не нужна и не запрашивается на сайте.
+  const isFree = event.price === 0;
+  if (!isFree) {
+    if (!email) return res.status(400).json({ error: 'Заполните email' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Некорректный email' });
+    }
+  }
+  const customerEmail = isFree ? '' : email;
 
   const validSeats = db.prepare(
     `SELECT id FROM hall_seats WHERE id IN (${seatIds.map(() => '?').join(',')})`
@@ -55,7 +63,7 @@ router.post('/', (req, res) => {
       const bookingInfo = db.prepare(`
         INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token, arrival_time)
         VALUES (?, ?, ?, ?, 'held', ?, ?, ?, ?)
-      `).run(eventId, bookingRef, name, email, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime);
+      `).run(eventId, bookingRef, name, customerEmail, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime);
 
       const insertSeat = db.prepare(
         'INSERT INTO booking_seats (booking_id, seat_id, event_id) VALUES (?, ?, ?)'
@@ -73,7 +81,7 @@ router.post('/', (req, res) => {
       paymentUrl: `/html/payment.html?booking=${result.bookingRef}`,
       // Для бесплатных мероприятий бронь подтверждается через Telegram, а
       // не через (тестовую) оплату — см. фронтенд booking.js.
-      telegramUrl: event.price === 0 ? telegram.botDeepLink(result.telegramLinkToken) : null,
+      telegramUrl: isFree ? telegram.botDeepLink(result.telegramLinkToken) : null,
     });
   } catch (err) {
     if (err.message === 'SEATS_TAKEN') {

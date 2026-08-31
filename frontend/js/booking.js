@@ -64,22 +64,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const arrivalInput = document.getElementById('arrival_time');
   const arrivalHint = document.getElementById('arrival-hint');
-  function updateArrivalHint() {
-    if (!arrivalInput.value) { arrivalHint.textContent = ''; return; }
-    arrivalHint.textContent = `Столик держим до ${addMinutesToTime(arrivalInput.value, 15)} — 15 минут форы на опоздание.`;
-  }
-  arrivalInput.addEventListener('input', updateArrivalHint);
+  arrivalHint.textContent = 'Место держится ещё 15 минут после этого времени.';
+
+  const emailField = document.getElementById('email-field');
+  const emailInput = document.getElementById('email');
 
   try {
     event = await Api.get(`/api/events/${eventId}`);
     titleEl.textContent = `${event.title} — ${formatDateHuman(event.event_date)} ${event.event_time}`;
     arrivalInput.value = event.event_time;
-    updateArrivalHint();
     if (isFreeEvent()) {
       submitBtn.textContent = 'Подтвердить бронь в Telegram ✈';
       submitBtn.classList.add('btn-telegram');
       const banner = document.getElementById('test-mode-banner');
       if (banner) banner.style.display = 'none';
+      // Билет на почту не шлём для бесплатных мероприятий — подтверждение
+      // и так приходит в Telegram-бот, почта тут не нужна.
+      emailField.style.display = 'none';
+      emailInput.required = false;
     }
     await loadSeats();
     renderSummary();
@@ -123,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     errorEl.className = '';
     if (selected.size === 0) return;
     const name = formEl.name.value.trim();
-    const email = formEl.email.value.trim();
+    const email = isFreeEvent() ? '' : formEl.email.value.trim();
     const arrivalTime = arrivalInput.value;
     submitBtn.disabled = true;
     try {
