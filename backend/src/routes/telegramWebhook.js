@@ -49,15 +49,19 @@ router.post('/webhook', async (req, res) => {
       WHERE bs.booking_id = ?
     `).all(booking.id);
     const seatLabels = seats.map((s) => `${s.table_label}, место ${s.seat_number}`).join('; ');
-    const arrivalLine = booking.arrival_time ? `🕒 Ждём вас в <b>${booking.arrival_time}</b>\n` : '';
+    const arrivalLine = booking.arrival_time
+      ? `🕒 Ждём вас в <b>${telegram.stylizeDigits(booking.arrival_time)}</b>\n`
+      : '';
+    // Спойлер (тап, чтобы раскрыть) — просили держать эту часть скрытой за
+    // «пузырём», а не показывать сразу открытым текстом.
     const graceLine = booking.arrival_time
-      ? `\n⏰ <b>Бронь держится ещё 15 минут</b> сверх названного времени.\n`
+      ? `\n⏰ <tg-spoiler><b>Бронь держится ещё ${telegram.stylizeDigits('15')} минут</b> сверх названного времени.</tg-spoiler>\n`
       : '';
 
     await telegram.sendMessage(chatId,
       `Здравствуйте, ${booking.customer_name}! 👋\n\n` +
       `Ваша бронь на «<b>${event.title}</b>» принята.\n` +
-      `📅 ${event.event_date} в ${event.event_time}\n` +
+      `📅 ${event.event_date} в <b>${telegram.stylizeDigits(event.event_time)}</b>\n` +
       `💺 ${seatLabels}\n` +
       arrivalLine +
       graceLine +

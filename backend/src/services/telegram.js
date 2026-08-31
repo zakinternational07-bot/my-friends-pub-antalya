@@ -45,6 +45,17 @@ function urlButtonsRow(buttons) {
   return { inline_keyboard: [buttons.map((b) => ({ text: b.text, url: b.url }))] };
 }
 
+// У Telegram нет «шрифтов» как таковых — только жирный/курсив/код и т.п.
+// Но Unicode отдельно кодирует стилизованные варианты ЦИФР (не просто
+// оформление обычных цифр, а другие символы, которые выглядят жирным
+// гротеском) — они точно бросаются в глаза на фоне остального текста.
+// Работает только для цифр/латиницы (для кириллицы такого в Unicode нет),
+// но времени бронирования, которое как раз нужно выделить, достаточно.
+const BOLD_DIGIT_BASE = 0x1D7EC; // Mathematical Sans-Serif Bold Digit Zero
+function stylizeDigits(value) {
+  return String(value).replace(/[0-9]/g, (d) => String.fromCodePoint(BOLD_DIGIT_BASE + Number(d)));
+}
+
 function botDeepLink(token) {
   const username = process.env.TELEGRAM_BOT_USERNAME;
   if (!username) return null;
@@ -58,4 +69,4 @@ async function registerWebhook(publicBaseUrl) {
   if (result && result.ok) console.log(`[telegram] webhook зарегистрирован: ${url}`);
 }
 
-module.exports = { isConfigured, sendMessage, urlButtonsRow, botDeepLink, registerWebhook };
+module.exports = { isConfigured, sendMessage, urlButtonsRow, botDeepLink, registerWebhook, stylizeDigits };

@@ -45,7 +45,7 @@ async function sendDueReminders() {
 
     // eslint-disable-next-line no-await-in-loop
     await telegram.sendMessage(booking.telegram_chat_id,
-      `Напоминаем: сегодня в <b>${booking.event_time}</b> у вас бронь на «<b>${booking.event_title}</b>» в My Friends Pub.\n\n` +
+      `Напоминаем: сегодня в <b>${telegram.stylizeDigits(booking.event_time)}</b> у вас бронь на «<b>${booking.event_title}</b>» в My Friends Pub.\n\n` +
       `Пожалуйста, подтвердите, что придёте — это займёт одно нажатие 👇`,
       buttons
     );
