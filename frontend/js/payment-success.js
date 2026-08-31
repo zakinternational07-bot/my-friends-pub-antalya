@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <p>${formatDateHuman(event.event_date)} · ${escapeHtml(event.event_time)}</p>
         <p>Места: ${escapeHtml(seatList)}</p>
         <p>Гость: ${escapeHtml(booking.customer_name)}</p>
+        ${booking.arrival_time ? `<p>Подойдёте к <strong>${escapeHtml(booking.arrival_time)}</strong> — столик держим до ${escapeHtml(addMinutesToTime(booking.arrival_time, 15))}</p>` : ''}
         <img src="${ticket.qrDataUrl}" alt="QR код билета" width="200" height="200" />
         <p class="ticket-ref">${escapeHtml(booking.booking_ref)}</p>
         <p>Билет с QR-кодом также отправлен на ${escapeHtml(booking.customer_email)} (тестовый режим — письмо сохранено на сервере, реально не отправлено).</p>

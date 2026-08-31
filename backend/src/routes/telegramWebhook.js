@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db/connection');
 const telegram = require('../services/telegram');
 const { broadcastSeatUpdate } = require('../ws/socket');
+const { addMinutesToTime } = require('../services/ticket');
 
 const router = express.Router();
 
@@ -49,13 +50,19 @@ router.post('/webhook', async (req, res) => {
       WHERE bs.booking_id = ?
     `).all(booking.id);
     const seatLabels = seats.map((s) => `${s.table_label}, место ${s.seat_number}`).join('; ');
+    const arrivalLine = booking.arrival_time ? `🕒 Ждём вас в <b>${booking.arrival_time}</b>\n` : '';
+    const graceLine = booking.arrival_time
+      ? `\n⏰ <b>Место держим до <code>${addMinutesToTime(booking.arrival_time, 15)}</code></b> — это 15 минут после названного времени. Опоздать можно, но если задержитесь дольше, пожалуйста, напишите нам сюда же.\n`
+      : '';
 
     await telegram.sendMessage(chatId,
       `Здравствуйте, ${booking.customer_name}! 👋\n\n` +
       `Ваша бронь на «<b>${event.title}</b>» принята.\n` +
       `📅 ${event.event_date} в ${event.event_time}\n` +
-      `💺 ${seatLabels}\n\n` +
-      `В день мероприятия пришлём сюда же напоминание — нужно будет подтвердить, что вы придёте, одним нажатием.`
+      `💺 ${seatLabels}\n` +
+      arrivalLine +
+      graceLine +
+      `\nВ день мероприятия пришлём сюда же напоминание — нужно будет подтвердить, что вы придёте, одним нажатием.`
     );
 
     broadcastSeatUpdate(booking.event_id);

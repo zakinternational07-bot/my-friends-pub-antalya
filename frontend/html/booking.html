@@ -50,6 +50,11 @@
         <label for="email">Email (на него придёт билет)</label>
         <input type="email" id="email" name="email" required />
       </div>
+      <div class="form-field">
+        <label for="arrival_time">Во сколько подойдёте?</label>
+        <input type="time" id="arrival_time" name="arrival_time" required />
+        <p id="arrival-hint" style="font-size:0.85rem;color:var(--text-muted);margin:6px 0 0;"></p>
+      </div>
       <button type="submit" class="btn btn-block" disabled>Оплатить билеты</button>
     </form>
   </main>

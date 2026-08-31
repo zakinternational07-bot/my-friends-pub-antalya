@@ -11,7 +11,16 @@ async function generateQrDataUrl(bookingRef) {
   return QRCode.toDataURL(bookingRef, { margin: 1, width: 240 });
 }
 
-function ticketEmailHtml({ booking, event, seatLabels, qrDataUrl }) {
+// Прибавляет минуты к времени "HH:MM", с переходом через полночь.
+function addMinutesToTime(hhmm, minutesToAdd) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = (h * 60 + m + minutesToAdd + 24 * 60) % (24 * 60);
+  const newH = Math.floor(total / 60);
+  const newM = total % 60;
+  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+}
+
+function ticketEmailHtml({ booking, event, seatLabels, qrDataUrl, graceUntil }) {
   return `<!doctype html>
 <html lang="ru">
 <head><meta charset="utf-8"><title>Билет My Friends Pub Antalya</title></head>
@@ -27,6 +36,11 @@ function ticketEmailHtml({ booking, event, seatLabels, qrDataUrl }) {
       <p style="margin:4px 0;">Места: <strong>${seatLabels.join(', ')}</strong></p>
       <p style="margin:4px 0;">Гость: <strong>${booking.customer_name}</strong></p>
       <p style="margin:4px 0 16px;">Сумма: <strong>${booking.total_price} ₺</strong></p>
+      ${booking.arrival_time ? `
+      <p style="margin:4px 0;">Вы подойдёте к: <strong>${booking.arrival_time}</strong></p>
+      <div style="margin:12px 0 16px;padding:10px 14px;background:#3a2a1a;border:1px solid #c0272d;border-radius:6px;">
+        <p style="margin:0;font-size:13px;color:#f5f2ee;"><strong>⏰ Столик держим до ${graceUntil}</strong> — 15 минут после указанного времени. Если задержитесь дольше, пожалуйста, предупредите нас.</p>
+      </div>` : ''}
       <p style="margin:0 0 8px;">Номер брони: <strong>${booking.booking_ref}</strong></p>
       <img src="${qrDataUrl}" alt="QR код брони" width="180" height="180" style="display:block;margin:16px 0;border-radius:4px;" />
       <p style="font-size:12px;color:#888;">Покажите этот QR-код на входе. Это письмо сгенерировано в тестовом режиме — реальная оплата не производилась.</p>
@@ -36,4 +50,4 @@ function ticketEmailHtml({ booking, event, seatLabels, qrDataUrl }) {
 </html>`;
 }
 
-module.exports = { generateBookingRef, generateQrDataUrl, ticketEmailHtml };
+module.exports = { generateBookingRef, generateQrDataUrl, ticketEmailHtml, addMinutesToTime };

@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <p>${formatDateHuman(event.event_date)} · ${escapeHtml(event.event_time)}</p>
         <p>Места: ${escapeHtml(seatList)}</p>
         <p>Гость: ${escapeHtml(booking.customer_name)} (${escapeHtml(booking.customer_email)})</p>
+        ${booking.arrival_time ? `<p>Подойдёте к: ${escapeHtml(booking.arrival_time)}</p>` : ''}
         <h3>Итого: ${booking.total_price} ₺</h3>
         <p id="payment-timer" class="tag"></p>
         <button id="confirm-btn" class="btn btn-block">Оплатить (тестовый режим)</button>

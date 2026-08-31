@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db/connection');
 const { getPaymentProvider } = require('../services/payment');
 const { getEmailService } = require('../services/email');
-const { generateQrDataUrl, ticketEmailHtml } = require('../services/ticket');
+const { generateQrDataUrl, ticketEmailHtml, addMinutesToTime } = require('../services/ticket');
 const { broadcastSeatUpdate } = require('../ws/socket');
 
 const router = express.Router();
@@ -40,7 +40,8 @@ router.post('/mock/confirm', async (req, res) => {
   const seatLabels = seats.map((s) => `${s.table_label} место ${s.seat_number}`);
 
   const qrDataUrl = await generateQrDataUrl(booking.booking_ref);
-  const html = ticketEmailHtml({ booking, event, seatLabels, qrDataUrl });
+  const graceUntil = booking.arrival_time ? addMinutesToTime(booking.arrival_time, 15) : null;
+  const html = ticketEmailHtml({ booking, event, seatLabels, qrDataUrl, graceUntil });
 
   const emailService = getEmailService();
   await emailService.send({

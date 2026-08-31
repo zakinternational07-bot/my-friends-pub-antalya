@@ -22,6 +22,7 @@ const migrations = {
   telegram_chat_id: 'ALTER TABLE bookings ADD COLUMN telegram_chat_id TEXT',
   attendance_status: "ALTER TABLE bookings ADD COLUMN attendance_status TEXT NOT NULL DEFAULT 'pending'",
   reminder_sent_at: 'ALTER TABLE bookings ADD COLUMN reminder_sent_at TEXT',
+  arrival_time: 'ALTER TABLE bookings ADD COLUMN arrival_time TEXT',
 };
 for (const [column, sql] of Object.entries(migrations)) {
   if (!bookingColumns.includes(column)) db.exec(sql);

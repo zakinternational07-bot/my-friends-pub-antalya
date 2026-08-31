@@ -9,13 +9,16 @@ const telegram = require('../services/telegram');
 const router = express.Router();
 
 router.post('/', (req, res) => {
-  const { eventId, seatIds, name, email } = req.body || {};
+  const { eventId, seatIds, name, email, arrivalTime } = req.body || {};
 
-  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !email) {
-    return res.status(400).json({ error: 'Заполните имя, email и выберите хотя бы одно место' });
+  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !email || !arrivalTime) {
+    return res.status(400).json({ error: 'Заполните имя, email, время прихода и выберите хотя бы одно место' });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Некорректный email' });
+  }
+  if (!/^\d{2}:\d{2}$/.test(arrivalTime)) {
+    return res.status(400).json({ error: 'Некорректное время прихода' });
   }
 
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
@@ -50,9 +53,9 @@ router.post('/', (req, res) => {
       const telegramLinkToken = crypto.randomBytes(16).toString('hex');
 
       const bookingInfo = db.prepare(`
-        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token)
-        VALUES (?, ?, ?, ?, 'held', ?, ?, ?)
-      `).run(eventId, bookingRef, name, email, totalPrice, holdExpiresAt, telegramLinkToken);
+        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token, arrival_time)
+        VALUES (?, ?, ?, ?, 'held', ?, ?, ?, ?)
+      `).run(eventId, bookingRef, name, email, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime);
 
       const insertSeat = db.prepare(
         'INSERT INTO booking_seats (booking_id, seat_id, event_id) VALUES (?, ?, ?)'

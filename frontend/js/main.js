@@ -12,6 +12,14 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Прибавляет минуты к времени "HH:MM" с переходом через полночь —
+// используется для показа грейс-периода брони (15 минут на опоздание).
+function addMinutesToTime(hhmm, minutesToAdd) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = (h * 60 + m + minutesToAdd + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
 // Картинка или видео-превью для карточки мероприятия — используется и в
 // афише недели, и (в укрупнённом виде) на странице самого мероприятия.
 function eventMediaHtml(ev) {

@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   telegram_link_token TEXT UNIQUE,   -- payload в t.me/<bot>?start=<token>
   telegram_chat_id TEXT,             -- chat_id, полученный после /start
   attendance_status TEXT NOT NULL DEFAULT 'pending', -- pending | confirmed | declined
-  reminder_sent_at TEXT              -- когда отправили напоминание в день мероприятия
+  reminder_sent_at TEXT,             -- когда отправили напоминание в день мероприятия
+  arrival_time TEXT                  -- HH:MM, во сколько гость планирует подойти
 );
 
 CREATE TABLE IF NOT EXISTS booking_seats (

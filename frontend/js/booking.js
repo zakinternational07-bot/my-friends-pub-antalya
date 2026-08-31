@@ -62,9 +62,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const submitBtn = formEl.querySelector('button[type="submit"]');
   const isFreeEvent = () => event && event.price === 0;
 
+  const arrivalInput = document.getElementById('arrival_time');
+  const arrivalHint = document.getElementById('arrival-hint');
+  function updateArrivalHint() {
+    if (!arrivalInput.value) { arrivalHint.textContent = ''; return; }
+    arrivalHint.textContent = `Столик держим до ${addMinutesToTime(arrivalInput.value, 15)} — 15 минут форы на опоздание.`;
+  }
+  arrivalInput.addEventListener('input', updateArrivalHint);
+
   try {
     event = await Api.get(`/api/events/${eventId}`);
     titleEl.textContent = `${event.title} — ${formatDateHuman(event.event_date)} ${event.event_time}`;
+    arrivalInput.value = event.event_time;
+    updateArrivalHint();
     if (isFreeEvent()) {
       submitBtn.textContent = 'Подтвердить бронь в Telegram ✈';
       submitBtn.classList.add('btn-telegram');
@@ -114,6 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (selected.size === 0) return;
     const name = formEl.name.value.trim();
     const email = formEl.email.value.trim();
+    const arrivalTime = arrivalInput.value;
     submitBtn.disabled = true;
     try {
       const result = await Api.post('/api/bookings', {
@@ -121,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         seatIds: [...selected],
         name,
         email,
+        arrivalTime,
       });
       if (isFreeEvent() && result.telegramUrl) {
         window.open(result.telegramUrl, '_blank', 'noopener');
