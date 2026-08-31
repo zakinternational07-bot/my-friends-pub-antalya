@@ -227,24 +227,24 @@ function seedPersistentEvents() {
   upsertPersistentEvent({
     title: 'LIVE MUSIC 🔥',
     slug: 'live-music-nyc-hits',
-    event_date: '2026-08-28',
+    event_date: '2026-09-04',
     event_time: '20:00',
-    price: 0,
-    description_short: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
-    description_long: 'Ребята исполняют самые популярные хиты улиц Нью-Йорка 🗽',
+    price: 300,
+    description_short: 'Живые хиты под гитару — танцы, драйв, атмосфера вечеринки 🎸',
+    description_long: 'Живые хиты под гитару — танцы, драйв, атмосфера вечеринки 🎸',
     poster_image: '',
     video_url: '/assets/video/live-music-nyc-hits.mp4',
   });
   upsertPersistentEvent({
     title: 'DJ RasuLove',
     slug: 'dj-rasulove',
-    event_date: '2026-08-30',
+    event_date: '2026-09-05',
     event_time: '21:00',
-    price: 0,
-    description_short: 'DJ музыка весь вечер, которая заставит вас танцевать 🪩',
-    description_long: 'DJ музыка весь вечер, которая заставит вас танцевать 🪩',
+    price: 500,
+    description_short: 'DJ-сеты на весь вечер — танцы до полуночи 🪩',
+    description_long: 'DJ-сеты на весь вечер — танцы до полуночи 🪩',
     poster_image: '',
-    video_url: '/assets/video/dj-rasulove.mp4',
+    video_url: '/assets/video/dj-rasulove-saturday.mp4',
   });
   upsertPersistentEvent({
     title: 'Street Players',
@@ -256,6 +256,61 @@ function seedPersistentEvents() {
     description_long: 'Ребята исполняют самые популярные песни улиц Нью-Йорка 🗽',
     poster_image: '/assets/images/street-players.jpg',
     video_url: '',
+  });
+  upsertPersistentEvent({
+    title: 'Тихий вечер',
+    slug: 'quiet-evening-monday',
+    event_date: '2026-08-31',
+    event_time: '19:00',
+    price: 0,
+    description_short: 'Спокойный вечер в пабе: тихая музыка и уютная атмосфера',
+    description_long: 'Спокойный вечер в пабе: тихая музыка и уютная атмосфера, время для разговоров без лишней суеты.',
+    poster_image: '',
+    video_url: '/assets/video/quiet-evening-monday.mp4',
+  });
+  upsertPersistentEvent({
+    title: 'Тихий вечер',
+    slug: 'quiet-evening-tuesday',
+    event_date: '2026-09-01',
+    event_time: '19:00',
+    price: 0,
+    description_short: 'Тихий вечер без суеты — отдохнуть после длинного дня',
+    description_long: 'Тихий вечер без суеты — идеально, чтобы отдохнуть после длинного дня в спокойной компании.',
+    poster_image: '',
+    video_url: '/assets/video/quiet-evening-tuesday.mp4',
+  });
+  upsertPersistentEvent({
+    title: 'Тихий вечер',
+    slug: 'quiet-evening-wednesday',
+    event_date: '2026-09-02',
+    event_time: '19:00',
+    price: 0,
+    description_short: 'Уютный тихий вечер — спокойная атмосфера и хорошая компания',
+    description_long: 'Уютный тихий вечер в пабе — спокойная атмосфера, хорошая компания и никакой спешки.',
+    poster_image: '',
+    video_url: '/assets/video/quiet-evening-wednesday.mp4',
+  });
+  upsertPersistentEvent({
+    title: 'Тихий вечер',
+    slug: 'quiet-evening-thursday',
+    event_date: '2026-09-03',
+    event_time: '19:00',
+    price: 0,
+    description_short: 'Тихий вечер: бокал вина и лёгкая атмосфера без спешки',
+    description_long: 'Тихий вечер: бокал вина, лёгкая атмосфера и время для себя без спешки.',
+    poster_image: '/assets/images/quiet-evening-thursday.jpg',
+    video_url: '',
+  });
+  upsertPersistentEvent({
+    title: 'ЯБАНДЖИ Standup',
+    slug: 'yabandzhi-standup',
+    event_date: '2026-09-06',
+    event_time: '20:00',
+    price: 700,
+    description_short: 'Стендап от комиков-иностранцев о жизни в Турции — метко и смешно',
+    description_long: 'Стендап-вечер от комиков-иностранцев (ябанджи) о жизни в Турции — взгляд со стороны на местные привычки и культуру, метко и смешно.',
+    poster_image: '',
+    video_url: '/assets/video/yabandzhi-standup.mp4',
   });
 }
 
