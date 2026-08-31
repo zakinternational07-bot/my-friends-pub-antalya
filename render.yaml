@@ -27,3 +27,7 @@ services:
         sync: false
       - key: REMINDER_HOURS_BEFORE
         value: "12"
+      - key: REMINDER_SECOND_HOURS_BEFORE
+        value: "6"
+      - key: REMINDER_CANCEL_HOURS_BEFORE
+        value: "3"

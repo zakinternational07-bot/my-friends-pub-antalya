@@ -53,6 +53,7 @@ router.get('/:ref/:action', async (req, res) => {
   if (booking.attendance_status === 'pending') {
     db.prepare('UPDATE bookings SET attendance_status = ? WHERE id = ?')
       .run(action === 'confirm' ? 'confirmed' : 'declined', booking.id);
+    booking.attendance_status = action === 'confirm' ? 'confirmed' : 'declined';
 
     if (action === 'decline') {
       db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(booking.id);
@@ -67,7 +68,19 @@ router.get('/:ref/:action', async (req, res) => {
     }
   }
 
-  if (action === 'confirm') {
+  // Отвечаем по РЕАЛЬНОМУ статусу брони, а не по нажатой кнопке — если
+  // гость опоздал с ответом и бронь уже сгорела автоматически (см.
+  // reminderScheduler.js), нельзя показывать «Подтверждено», хотя место
+  // уже отдали.
+  if (booking.attendance_status === 'expired') {
+    return res.send(resultPage({
+      title: 'Бронь больше не активна',
+      message: 'Мы не получили ответ вовремя, и место уже освободили для других гостей. Будем рады видеть вас на другом мероприятии 💛',
+      isError: true,
+    }));
+  }
+
+  if (booking.attendance_status === 'confirmed') {
     return res.send(resultPage({
       title: 'Бронь подтверждена',
       message: `Спасибо! Ждём вас сегодня в ${escapeHtml(event.event_time)} на «${escapeHtml(event.title)}» 🎉`,
