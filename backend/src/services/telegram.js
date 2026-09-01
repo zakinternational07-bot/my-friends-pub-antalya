@@ -56,6 +56,18 @@ function stylizeDigits(value) {
   return String(value).replace(/[0-9]/g, (d) => String.fromCodePoint(BOLD_DIGIT_BASE + Number(d)));
 }
 
+// Оценка 1-5 в виде звёзд для сообщений с результатами опроса.
+function starBar(rating) {
+  const filled = Math.max(0, Math.min(5, Math.round(rating)));
+  return '⭐'.repeat(filled) + '☆'.repeat(5 - filled);
+}
+
+// Выравнивает подпись категории и звёзды в столбик — работает только внутри
+// <pre>/<code> (моноширинный шрифт), иначе пробелы не выровняются.
+function ratingLine(label, rating, width = 20) {
+  return `${label.padEnd(width, ' ')}${starBar(rating)}`;
+}
+
 function botDeepLink(token) {
   const username = process.env.TELEGRAM_BOT_USERNAME;
   if (!username) return null;
@@ -69,4 +81,7 @@ async function registerWebhook(publicBaseUrl) {
   if (result && result.ok) console.log(`[telegram] webhook зарегистрирован: ${url}`);
 }
 
-module.exports = { isConfigured, sendMessage, urlButtonsRow, botDeepLink, registerWebhook, stylizeDigits };
+module.exports = {
+  isConfigured, sendMessage, urlButtonsRow, botDeepLink, registerWebhook, stylizeDigits,
+  starBar, ratingLine,
+};

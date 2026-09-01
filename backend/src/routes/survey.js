@@ -117,11 +117,13 @@ router.post('/:token', express.urlencoded({ extended: false }), async (req, res)
   const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
   if (staffChatId) {
     await telegram.sendMessage(staffChatId,
-      `#Опрос\n«${escapeHtml(event.title)}», ${event.event_date}\n` +
-      `Обслуживание: ${ratings[0]}\n` +
-      `Еда: ${ratings[1]}\n` +
-      `Напитки: ${ratings[2]}\n` +
-      `Общее впечатление: ${ratings[3]}`
+      `#Опрос\n🎫 «${escapeHtml(event.title)}» · ${event.event_date}\n\n` +
+      '<pre>' +
+      `${telegram.ratingLine('Обслуживание', ratings[0])}\n` +
+      `${telegram.ratingLine('Еда', ratings[1])}\n` +
+      `${telegram.ratingLine('Напитки', ratings[2])}\n` +
+      telegram.ratingLine('Общее впечатление', ratings[3]) +
+      '</pre>'
     );
     if (cleanComment) {
       await telegram.sendMessage(staffChatId,

@@ -140,14 +140,17 @@ async function sendWeeklySummary() {
     return;
   }
 
-  const avg = (key) => (rows.reduce((sum, r) => sum + r[key], 0) / rows.length).toFixed(1);
+  const avg = (key) => rows.reduce((sum, r) => sum + r[key], 0) / rows.length;
+  const avgLine = (label, key) => `${telegram.ratingLine(label, avg(key))} ${avg(key).toFixed(1)}`;
 
   await telegram.sendMessage(staffChatId,
-    `#Опрос\nСредняя оценка за неделю (${rows.length} ${pluralizeOtvet(rows.length)}):\n` +
-    `Обслуживание: ${avg('rating_service')}\n` +
-    `Еда: ${avg('rating_food')}\n` +
-    `Напитки: ${avg('rating_drinks')}\n` +
-    `Общее впечатление: ${avg('rating_overall')}`
+    `#Опрос\n📊 Средняя оценка за неделю (${rows.length} ${pluralizeOtvet(rows.length)})\n\n` +
+    '<pre>' +
+    `${avgLine('Обслуживание', 'rating_service')}\n` +
+    `${avgLine('Еда', 'rating_food')}\n` +
+    `${avgLine('Напитки', 'rating_drinks')}\n` +
+    avgLine('Общее впечатление', 'rating_overall') +
+    '</pre>'
   );
 }
 
