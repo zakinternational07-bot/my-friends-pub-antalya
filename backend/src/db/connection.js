@@ -2,7 +2,11 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 
-const dataDir = path.join(__dirname, '..', '..', 'data');
+// На Render DATA_DIR указывает на смонтированный постоянный диск (см.
+// render.yaml) — без него sqlite-файл живёт на эфемерном диске и пропадает
+// при каждом деплое/долгом сне. Локально DATA_DIR не задан, используется
+// обычная папка внутри проекта.
+const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = path.join(dataDir, 'mfp.sqlite');

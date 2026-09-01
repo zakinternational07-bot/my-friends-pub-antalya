@@ -2,11 +2,17 @@ services:
   - name: my-friends-pub-antalya
     type: web
     runtime: node
-    plan: free
+    plan: starter
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
+    disk:
+      name: mfp-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: DATA_DIR
+        value: /var/data
       - key: SESSION_SECRET
         generateValue: true
       - key: ADMIN_USERNAME

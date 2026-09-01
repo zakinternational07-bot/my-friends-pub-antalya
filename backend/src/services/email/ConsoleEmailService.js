@@ -2,7 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const EmailService = require('./EmailService');
 
-const emailsDir = path.join(__dirname, '..', '..', '..', 'data', 'emails');
+const emailsDir = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'emails')
+  : path.join(__dirname, '..', '..', '..', 'data', 'emails');
 
 // Тестовый провайдер писем: реальная почта никуда не уходит. Письмо
 // логируется в консоль и сохраняется как .html файл в backend/data/emails/,
