@@ -201,4 +201,30 @@ router.get('/bookings', (req, res) => {
   res.json(rows);
 });
 
+// ----- Surveys (опрос по итогам визита, read-only) -----
+router.get('/surveys', (req, res) => {
+  const rows = db.prepare(`
+    SELECT s.id, s.submitted_at, s.rating_service, s.rating_food, s.rating_drinks, s.rating_overall, s.comment,
+           b.customer_name, b.booking_ref, e.title as event_title, e.event_date as event_date
+    FROM surveys s
+    JOIN bookings b ON b.id = s.booking_id
+    JOIN events e ON e.id = s.event_id
+    WHERE s.submitted_at IS NOT NULL
+    ORDER BY s.submitted_at DESC
+    LIMIT 200
+  `).all();
+
+  const avgRow = (extraWhere) => db.prepare(`
+    SELECT COUNT(*) as n, AVG(rating_service) as service, AVG(rating_food) as food,
+           AVG(rating_drinks) as drinks, AVG(rating_overall) as overall
+    FROM surveys WHERE submitted_at IS NOT NULL ${extraWhere}
+  `).get();
+
+  res.json({
+    rows,
+    allTime: avgRow(''),
+    last7d: avgRow("AND submitted_at >= datetime('now', '-7 days')"),
+  });
+});
+
 module.exports = router;

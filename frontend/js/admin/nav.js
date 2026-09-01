@@ -18,6 +18,7 @@ async function initAdminShell(activePage) {
     { href: 'menu.html', label: 'Меню', key: 'menu' },
     { href: 'hall.html', label: 'План зала', key: 'hall' },
     { href: 'bookings.html', label: 'Брони', key: 'bookings' },
+    { href: 'surveys.html', label: 'Отзывы', key: 'surveys' },
   ];
 
   const nav = document.getElementById('admin-nav');
