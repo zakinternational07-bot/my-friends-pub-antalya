@@ -14,6 +14,7 @@ const adminRouter = require('./src/routes/admin');
 const telegramWebhookRouter = require('./src/routes/telegramWebhook');
 const rsvpRouter = require('./src/routes/rsvp');
 const surveyRouter = require('./src/routes/survey');
+const { uploadsDir } = require('./src/middleware/upload');
 const { initWebSocket } = require('./src/ws/socket');
 const telegram = require('./src/services/telegram');
 const { startReminderScheduler } = require('./src/services/reminderScheduler');
@@ -45,6 +46,9 @@ app.use('/survey', surveyRouter);
 
 const frontendDir = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendDir));
+// Фото/видео, загруженные через админку (см. src/middleware/upload.js) —
+// живут на постоянном диске, а не в frontend/, поэтому отдельный роут.
+app.use('/uploads', express.static(uploadsDir));
 
 app.get('/', (req, res) => {
   res.redirect('/html/index.html');

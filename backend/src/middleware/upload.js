@@ -3,8 +3,17 @@ const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
 
-const IMAGES_DIR = path.join(__dirname, '..', '..', '..', 'frontend', 'assets', 'images', 'events');
-const VIDEO_DIR = path.join(__dirname, '..', '..', '..', 'frontend', 'assets', 'video', 'events');
+// Файлы, загруженные через админку, кладём на тот же постоянный диск, что
+// и sqlite (DATA_DIR на Render — см. render.yaml/README), а не в
+// frontend/assets: та папка — часть кода из git и пересоздаётся заново при
+// каждом деплое/рестарте, поэтому загруженные туда файлы раньше пропадали.
+// Отдаётся эта папка отдельным static-роутом /uploads (см. server.js).
+const uploadsDir = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'uploads')
+  : path.join(__dirname, '..', '..', 'data', 'uploads');
+
+const IMAGES_DIR = path.join(uploadsDir, 'images', 'events');
+const VIDEO_DIR = path.join(uploadsDir, 'video', 'events');
 
 function destinationFor(mimetype) {
   return mimetype.startsWith('video/') ? VIDEO_DIR : IMAGES_DIR;
@@ -40,7 +49,7 @@ const upload = multer({
 // Путь, который сохраняется в БД и отдаётся статикой Express (см. server.js).
 function publicPathFor(file) {
   const kind = file.mimetype.startsWith('video/') ? 'video' : 'images';
-  return `/assets/${kind}/events/${file.filename}`;
+  return `/uploads/${kind}/events/${file.filename}`;
 }
 
-module.exports = { upload, publicPathFor };
+module.exports = { upload, publicPathFor, uploadsDir };
