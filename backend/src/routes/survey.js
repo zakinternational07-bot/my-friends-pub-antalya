@@ -4,6 +4,12 @@ const telegram = require('../services/telegram');
 
 const router = express.Router();
 
+// "YYYY-MM-DD" (как хранится в БД) -> "DD.MM.YYYY" для сообщений персоналу.
+function formatDateRu(isoDate) {
+  const [y, m, d] = String(isoDate).split('-');
+  return y && m && d ? `${d}.${m}.${y}` : isoDate;
+}
+
 function escapeHtml(str) {
   return String(str == null ? '' : str)
     .replace(/&/g, '&amp;')
@@ -117,7 +123,7 @@ router.post('/:token', express.urlencoded({ extended: false }), async (req, res)
   const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
   if (staffChatId) {
     await telegram.sendMessage(staffChatId,
-      `#Опрос\n🎫 «${escapeHtml(event.title)}» · ${event.event_date}\n\n` +
+      `#Опрос\n🎫 «${escapeHtml(event.title)}» · ${formatDateRu(event.event_date)}\n\n` +
       '<pre>' +
       `${telegram.ratingLine('Обслуживание', ratings[0])}\n` +
       `${telegram.ratingLine('Еда', ratings[1])}\n` +
@@ -128,7 +134,7 @@ router.post('/:token', express.urlencoded({ extended: false }), async (req, res)
     if (cleanComment) {
       await telegram.sendMessage(staffChatId,
         '#отзыв\n' +
-        `Мероприятие: «${escapeHtml(event.title)}», ${event.event_date}\n` +
+        `Мероприятие: «${escapeHtml(event.title)}», ${formatDateRu(event.event_date)}\n` +
         `Гость: ${escapeHtml(booking.customer_name)}\n` +
         `Отзыв: ${escapeHtml(cleanComment)}`
       );
