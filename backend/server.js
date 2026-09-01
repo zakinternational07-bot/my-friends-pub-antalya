@@ -13,9 +13,11 @@ const authRouter = require('./src/routes/auth');
 const adminRouter = require('./src/routes/admin');
 const telegramWebhookRouter = require('./src/routes/telegramWebhook');
 const rsvpRouter = require('./src/routes/rsvp');
+const surveyRouter = require('./src/routes/survey');
 const { initWebSocket } = require('./src/ws/socket');
 const telegram = require('./src/services/telegram');
 const { startReminderScheduler } = require('./src/services/reminderScheduler');
+const { startSurveyScheduler } = require('./src/services/surveyScheduler');
 
 // Создаёт/обновляет админ-аккаунт и сидирует данные, если БД пустая.
 runSeed();
@@ -39,6 +41,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/telegram', telegramWebhookRouter);
 app.use('/rsvp', rsvpRouter);
+app.use('/survey', surveyRouter);
 
 const frontendDir = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendDir));
@@ -49,6 +52,7 @@ app.get('/', (req, res) => {
 
 initWebSocket(server);
 startReminderScheduler();
+startSurveyScheduler();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

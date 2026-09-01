@@ -77,3 +77,31 @@ CREATE TABLE IF NOT EXISTS booking_seats (
 
 CREATE INDEX IF NOT EXISTS idx_booking_seats_event ON booking_seats(event_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+
+-- Опрос по итогам визита: ссылка на форму рассылается через N часов после
+-- мероприятия (email или Telegram, в зависимости от того, чем бронировал
+-- гость). До заполнения формы rating_* и submitted_at пустые.
+CREATE TABLE IF NOT EXISTS surveys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  token TEXT UNIQUE NOT NULL,
+  sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+  submitted_at TEXT,
+  rating_service INTEGER,
+  rating_food INTEGER,
+  rating_drinks INTEGER,
+  rating_overall INTEGER,
+  comment TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_surveys_booking ON surveys(booking_id);
+CREATE INDEX IF NOT EXISTS idx_surveys_submitted ON surveys(submitted_at);
+
+-- Общее хранилище настроек/меток (например, когда последний раз слали
+-- еженедельную сводку по опросам), чтобы не заводить отдельную таблицу
+-- под каждую такую мелочь.
+CREATE TABLE IF NOT EXISTS kv_store (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
