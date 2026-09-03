@@ -21,15 +21,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `${seat.table_label}, место ${seat.seat_number}`;
   }
 
+  // Столик на схеме — один квадрат = весь стол, бронируется целиком (все
+  // его места разом), кроме барных мест — каждое из них само по себе
+  // отдельное посадочное место (один человек), поэтому у бара свой квадрат
+  // на каждое место.
+  function tableUnits() {
+    const groups = new Map();
+    seats.forEach((seat) => {
+      const key = seat.table_label === 'Бар' ? `bar:${seat.id}` : `table:${seat.table_label}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(seat);
+    });
+    return [...groups.values()].map((group) => {
+      const pos_x = group.reduce((sum, s) => sum + s.pos_x, 0) / group.length;
+      const pos_y = group.reduce((sum, s) => sum + s.pos_y, 0) / group.length;
+      const isBar = group[0].table_label === 'Бар';
+      const label = isBar
+        ? String(30 + group[0].seat_number)
+        : group[0].table_label.replace(/\D/g, '');
+      const title = isBar ? seatLabel(group[0]) : `${group[0].table_label} (${group.length} мест)`;
+      return { seatIds: group.map((s) => s.id), pos_x, pos_y, label, title };
+    });
+  }
+
+  function unitStatus(unit) {
+    const unitSeats = unit.seatIds.map((id) => seats.find((s) => s.id === id));
+    if (unitSeats.every((s) => selected.has(s.id))) return 'selected';
+    if (unitSeats.some((s) => s.status === 'taken')) return 'taken';
+    if (unitSeats.some((s) => s.status === 'held' && !selected.has(s.id))) return 'held';
+    return 'free';
+  }
+
   function renderSeats() {
-    seatsLayerEl.innerHTML = seats.map((seat) => {
-      const isSelected = selected.has(seat.id);
-      const status = isSelected ? 'free' : seat.status;
-      return `<div class="seat${isSelected ? ' selected' : ''}"
-        data-id="${seat.id}"
-        data-status="${status}"
-        style="left:${seat.pos_x}%; top:${seat.pos_y}%;"
-        title="${seatLabel(seat)}"></div>`;
+    seatsLayerEl.innerHTML = tableUnits().map((unit) => {
+      const status = unitStatus(unit);
+      const isSelected = status === 'selected';
+      return `<div class="table-unit${isSelected ? ' selected' : ''}"
+        data-ids="${unit.seatIds.join(',')}"
+        data-status="${isSelected ? 'free' : status}"
+        style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
+        title="${unit.title}">${unit.label}</div>`;
     }).join('');
   }
 
@@ -44,12 +75,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   mapEl.addEventListener('click', (e) => {
-    const seatEl = e.target.closest('.seat');
-    if (!seatEl) return;
-    const id = Number(seatEl.dataset.id);
-    const seat = seats.find((s) => s.id === id);
-    if (!seat || (seat.status !== 'free' && !selected.has(id))) return;
-    if (selected.has(id)) selected.delete(id); else selected.add(id);
+    const unitEl = e.target.closest('.table-unit');
+    if (!unitEl) return;
+    const ids = unitEl.dataset.ids.split(',').map(Number);
+    const unitSeats = ids.map((id) => seats.find((s) => s.id === id)).filter(Boolean);
+    const isSelected = unitSeats.every((s) => selected.has(s.id));
+    if (!isSelected && unitSeats.some((s) => s.status !== 'free')) return;
+    if (isSelected) ids.forEach((id) => selected.delete(id));
+    else ids.forEach((id) => selected.add(id));
     renderSeats();
     renderSummary();
   });

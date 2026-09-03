@@ -433,13 +433,55 @@ body.menu-lightbox-active { overflow: hidden; }
   line-height: 1.3;
 }
 .hall-zone-stage {
-  background: rgba(224, 57, 63, 0.12);
-  border: 1px dashed rgba(224, 57, 63, 0.5);
-  font-size: 0.85rem;
+  background: var(--accent-red-light, #e0393f);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-/* Видимая точка места — маленькая, чтобы соседние места на плотной схеме
-   не сливались друг с другом. */
+/* Узкая длинная полоса вдоль столов 1-6 — текст развёрнут на 90°, чтобы
+   влезть в узкую колонку и при этом читаться, стоя лицом к столам. */
+.hall-zone-sea {
+  background: rgba(59, 130, 189, 0.16);
+  border: 1px solid rgba(59, 130, 189, 0.5);
+  overflow: hidden;
+}
+.hall-zone-sea span {
+  display: inline-block;
+  white-space: nowrap;
+  transform: rotate(-90deg);
+  font-size: 0.9rem;
+}
+
+/* Квадратик стола на схеме зала — один квадрат = весь стол (бронируется
+   целиком), с номером стола по центру. */
+.table-unit {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(240, 230, 210, 0.5);
+  background: rgba(20, 20, 20, 0.55);
+  color: var(--text-white);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  z-index: 1;
+  user-select: none;
+}
+.table-unit[data-status="free"] { border-color: var(--status-free); }
+.table-unit[data-status="held"] { background: var(--status-held); border-color: var(--status-held); }
+.table-unit[data-status="taken"] { background: var(--status-taken); border-color: var(--status-taken); }
+.table-unit.selected { background: var(--accent-red-light); border-color: var(--accent-red-light); box-shadow: 0 0 0 3px rgba(224,57,63,0.4); }
+.table-unit[data-status="free"], .table-unit.selected { cursor: pointer; }
+.table-unit[data-status="held"], .table-unit[data-status="taken"] { cursor: not-allowed; }
+.table-unit[data-status="held"]:not(.selected), .table-unit[data-status="taken"]:not(.selected) { pointer-events: none; }
+
+/* Видимая точка места — используется в админке (предпросмотр «сырых»
+   координат мест), на самой странице бронирования больше не участвует. */
 .seat {
   position: absolute;
   width: 14px;
