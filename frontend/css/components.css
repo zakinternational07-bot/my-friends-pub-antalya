@@ -465,7 +465,7 @@ body.menu-lightbox-active { overflow: hidden; }
   z-index: 1;
   user-select: none;
 }
-.table-unit[data-status="free"] { border-color: var(--status-free); }
+.table-unit[data-status="free"] { background: var(--status-free); border-color: var(--status-free); }
 .table-unit[data-status="held"] { background: var(--status-held); border-color: var(--status-held); }
 .table-unit[data-status="taken"] { background: var(--status-taken); border-color: var(--status-taken); }
 .table-unit.selected { background: var(--accent-red-light); border-color: var(--accent-red-light); box-shadow: 0 0 0 3px rgba(224,57,63,0.4); }
