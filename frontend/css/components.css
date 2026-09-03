@@ -457,8 +457,8 @@ body.menu-lightbox-active { overflow: hidden; }
    целиком). Номер стола видно в подсказке при наведении/тапе. */
 .table-unit {
   position: absolute;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   transform: translate(-50%, -50%);
   border: 1px solid rgba(240, 230, 210, 0.5);
   background: rgba(20, 20, 20, 0.55);
@@ -478,10 +478,10 @@ body.menu-lightbox-active { overflow: hidden; }
    квадрат пропорционально ширине экрана, чтобы между ними оставался
    зазор. */
 @media (max-width: 640px) {
-  .table-unit { width: 34px; height: 34px; }
+  .table-unit { width: 29px; height: 29px; }
 }
 @media (max-width: 420px) {
-  .table-unit { width: 28px; height: 28px; }
+  .table-unit { width: 24px; height: 24px; }
 }
 
 /* Видимая точка места — используется в админке (предпросмотр «сырых»
