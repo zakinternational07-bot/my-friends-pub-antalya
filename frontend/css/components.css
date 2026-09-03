@@ -480,6 +480,17 @@ body.menu-lightbox-active { overflow: hidden; }
 .table-unit[data-status="held"], .table-unit[data-status="taken"] { cursor: not-allowed; }
 .table-unit[data-status="held"]:not(.selected), .table-unit[data-status="taken"]:not(.selected) { pointer-events: none; }
 
+/* Схема зала на телефонах уже так узка, что 42px квадраты начинают
+   наезжать друг на друга (столы стоят близко на плане) — уменьшаем
+   квадрат и подпись пропорционально ширине экрана, чтобы между ними
+   оставался зазор. */
+@media (max-width: 640px) {
+  .table-unit { width: 34px; height: 34px; font-size: 0.85rem; }
+}
+@media (max-width: 420px) {
+  .table-unit { width: 28px; height: 28px; font-size: 0.75rem; }
+}
+
 /* Видимая точка места — используется в админке (предпросмотр «сырых»
    координат мест), на самой странице бронирования больше не участвует. */
 .seat {
