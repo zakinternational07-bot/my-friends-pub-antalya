@@ -454,21 +454,14 @@ body.menu-lightbox-active { overflow: hidden; }
 }
 
 /* Квадратик стола на схеме зала — один квадрат = весь стол (бронируется
-   целиком), с номером стола по центру. */
+   целиком). Номер стола видно в подсказке при наведении/тапе. */
 .table-unit {
   position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 42px;
   height: 42px;
   transform: translate(-50%, -50%);
   border: 1px solid rgba(240, 230, 210, 0.5);
   background: rgba(20, 20, 20, 0.55);
-  color: var(--text-white);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
   z-index: 1;
   user-select: none;
 }
@@ -482,13 +475,13 @@ body.menu-lightbox-active { overflow: hidden; }
 
 /* Схема зала на телефонах уже так узка, что 42px квадраты начинают
    наезжать друг на друга (столы стоят близко на плане) — уменьшаем
-   квадрат и подпись пропорционально ширине экрана, чтобы между ними
-   оставался зазор. */
+   квадрат пропорционально ширине экрана, чтобы между ними оставался
+   зазор. */
 @media (max-width: 640px) {
-  .table-unit { width: 34px; height: 34px; font-size: 0.85rem; }
+  .table-unit { width: 34px; height: 34px; }
 }
 @media (max-width: 420px) {
-  .table-unit { width: 28px; height: 28px; font-size: 0.75rem; }
+  .table-unit { width: 28px; height: 28px; }
 }
 
 /* Видимая точка места — используется в админке (предпросмотр «сырых»

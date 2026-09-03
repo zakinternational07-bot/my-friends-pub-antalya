@@ -36,11 +36,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pos_x = group.reduce((sum, s) => sum + s.pos_x, 0) / group.length;
       const pos_y = group.reduce((sum, s) => sum + s.pos_y, 0) / group.length;
       const isBar = group[0].table_label === 'Бар';
-      const label = isBar
-        ? String(30 + group[0].seat_number)
-        : group[0].table_label.replace(/\D/g, '');
       const title = isBar ? seatLabel(group[0]) : `${group[0].table_label} (${group.length} мест)`;
-      return { seatIds: group.map((s) => s.id), pos_x, pos_y, label, title };
+      return { seatIds: group.map((s) => s.id), pos_x, pos_y, title };
     });
   }
 
@@ -60,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         data-ids="${unit.seatIds.join(',')}"
         data-status="${isSelected ? 'free' : status}"
         style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
-        title="${unit.title}">${unit.label}</div>`;
+        title="${unit.title}"></div>`;
     }).join('');
   }
 
