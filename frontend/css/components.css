@@ -391,6 +391,25 @@ body.menu-lightbox-active { overflow: hidden; }
   white-space: nowrap;
 }
 
+/* ---- Выбор количества гостей ---- */
+.party-size-card { padding: 20px; margin-bottom: 20px; }
+.party-size-question { margin: 0 0 12px; color: var(--text-white); font-weight: 600; }
+.party-size-options { display: flex; gap: 10px; flex-wrap: wrap; }
+.party-size-btn {
+  min-width: 52px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-dark);
+  color: var(--text-white);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.party-size-btn:hover { border-color: var(--accent-red-light); }
+.party-size-btn.active { background: var(--accent-red-light); border-color: var(--accent-red-light); }
+
 /* ---- Hall / seat map ---- */
 .hall-map {
   position: relative;
@@ -401,6 +420,35 @@ body.menu-lightbox-active { overflow: hidden; }
   border-radius: var(--radius);
   overflow: hidden;
   touch-action: manipulation;
+}
+
+/* Пока гость не выбрал количество человек, схема притушена и не
+   кликабельна — подсказка сверху объясняет, что делать сначала. */
+.hall-map-hint {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 20px;
+  background: rgba(10, 10, 10, 0.55);
+  color: var(--text-white);
+  font-weight: 600;
+  z-index: 2;
+  pointer-events: none;
+}
+.hall-map-locked .hall-map-hint { display: flex; }
+.hall-map-locked .hall-seats { filter: grayscale(1) brightness(0.6); pointer-events: none; }
+
+/* Столики, недоступные для выбранного количества гостей — паб не отдаёт
+   стол на 4 персоны паре из двух, поэтому такие столики видно, но выбрать
+   их нельзя. */
+.table-unit-disabled {
+  opacity: 0.28;
+  filter: grayscale(1);
+  pointer-events: none !important;
+  cursor: default !important;
 }
 
 /* Слой с точками мест — отдельный от статичных зон (бар, сцена), чтобы

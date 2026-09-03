@@ -25,6 +25,17 @@
     <h1>Выбор мест</h1>
     <p id="booking-event-title" class="tag"></p>
 
+    <div class="card party-size-card" id="party-size-card">
+      <p class="party-size-question">На сколько человек бронируете столик?</p>
+      <div class="party-size-options" id="party-size-options">
+        <button type="button" class="party-size-btn" data-size="1">1</button>
+        <button type="button" class="party-size-btn" data-size="2">2</button>
+        <button type="button" class="party-size-btn" data-size="3">3</button>
+        <button type="button" class="party-size-btn" data-size="4">4</button>
+        <button type="button" class="party-size-btn" data-size="5">5+</button>
+      </div>
+    </div>
+
     <div class="hall-legend">
       <span><i class="legend-dot" style="background:var(--status-free)"></i>Свободно</span>
       <span><i class="legend-dot" style="background:var(--accent-red-light)"></i>Выбрано вами</span>
@@ -32,11 +43,12 @@
       <span><i class="legend-dot" style="background:var(--status-taken)"></i>Занято</span>
     </div>
 
-    <div class="hall-map" id="hall-map">
+    <div class="hall-map hall-map-locked" id="hall-map">
       <div class="hall-zone hall-zone-stage" style="left:58%; top:2%; width:20%; height:13%;">Сцена</div>
       <div class="hall-zone hall-zone-sea" style="left:1%; top:6%; width:3%; height:88%;"><span>Вид на море</span></div>
       <div class="hall-zone hall-zone-bar" style="left:74%; top:18%; width:22%; height:62%;">БАР<br>BAR</div>
       <div class="hall-seats" id="hall-seats"></div>
+      <div class="hall-map-hint" id="hall-map-hint">Сначала выберите количество гостей ↑</div>
     </div>
 
     <div class="card booking-summary" id="booking-summary">Выберите свободные места на схеме</div>

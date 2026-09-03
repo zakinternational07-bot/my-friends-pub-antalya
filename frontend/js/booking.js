@@ -7,6 +7,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const summaryEl = document.getElementById('booking-summary');
   const formEl = document.getElementById('booking-form');
   const errorEl = document.getElementById('booking-error');
+  const partySizeOptionsEl = document.getElementById('party-size-options');
+
+  // Пабу невыгодно отдавать столик на 4 человека паре из двух — поэтому
+  // по количеству гостей заранее сужаем список столиков, которые вообще
+  // можно выбрать. Барные места — по одному человеку, доступны только
+  // одиночным гостям.
+  const SMALL_TABLES = ['Стол 7', 'Стол 8', 'Стол 9', 'Стол 10', 'Стол 13', 'Стол 16'];
+  const MEDIUM_TABLES = ['Стол 2', 'Стол 3', 'Стол 4', 'Стол 5', 'Стол 6', 'Стол 11', 'Стол 12', 'Стол 14'];
+  const LARGE_TABLES = ['Стол 15'];
+
+  function allowedTableLabels(size) {
+    if (size === 1) return [...SMALL_TABLES, 'Бар'];
+    if (size === 2) return SMALL_TABLES;
+    if (size === 3 || size === 4) return MEDIUM_TABLES;
+    return LARGE_TABLES; // 5+
+  }
+
+  let partySize = null;
 
   if (!eventId) {
     mapEl.innerHTML = '<p class="form-error">Мероприятие не указано.</p>';
@@ -37,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pos_y = group.reduce((sum, s) => sum + s.pos_y, 0) / group.length;
       const isBar = group[0].table_label === 'Бар';
       const title = isBar ? seatLabel(group[0]) : `${group[0].table_label} (${group.length} мест)`;
-      return { seatIds: group.map((s) => s.id), pos_x, pos_y, title };
+      return { seatIds: group.map((s) => s.id), pos_x, pos_y, title, table_label: group[0].table_label };
     });
   }
 
@@ -50,16 +68,39 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderSeats() {
+    const allowed = partySize ? allowedTableLabels(partySize) : null;
     seatsLayerEl.innerHTML = tableUnits().map((unit) => {
       const status = unitStatus(unit);
       const isSelected = status === 'selected';
-      return `<div class="table-unit${isSelected ? ' selected' : ''}"
+      const isDisabled = allowed !== null && !allowed.includes(unit.table_label);
+      const classes = ['table-unit'];
+      if (isSelected) classes.push('selected');
+      if (isDisabled) classes.push('table-unit-disabled');
+      const title = isDisabled ? `${unit.title} — недоступен для выбранного числа гостей` : unit.title;
+      return `<div class="${classes.join(' ')}"
         data-ids="${unit.seatIds.join(',')}"
         data-status="${isSelected ? 'free' : status}"
         style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
-        title="${unit.title}"></div>`;
+        title="${title}"></div>`;
     }).join('');
   }
+
+  function selectPartySize(size) {
+    partySize = size;
+    selected.clear();
+    mapEl.classList.remove('hall-map-locked');
+    [...partySizeOptionsEl.children].forEach((btn) => {
+      btn.classList.toggle('active', Number(btn.dataset.size) === size);
+    });
+    renderSeats();
+    renderSummary();
+  }
+
+  partySizeOptionsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.party-size-btn');
+    if (!btn) return;
+    selectPartySize(Number(btn.dataset.size));
+  });
 
   function renderSummary() {
     const count = selected.size;
@@ -67,13 +108,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const totalText = event && event.price === 0 ? 'вход бесплатный' : `Сумма: <strong>${total} ₺</strong>`;
     summaryEl.innerHTML = count
       ? `Выбрано мест: <strong>${count}</strong> · ${totalText}`
-      : 'Выберите свободные места на схеме';
+      : partySize
+        ? 'Выберите свободный столик на схеме'
+        : 'Сначала выберите количество гостей';
     formEl.querySelector('button[type="submit"]').disabled = count === 0;
   }
 
   mapEl.addEventListener('click', (e) => {
+    if (!partySize) return;
     const unitEl = e.target.closest('.table-unit');
-    if (!unitEl) return;
+    if (!unitEl || unitEl.classList.contains('table-unit-disabled')) return;
     const ids = unitEl.dataset.ids.split(',').map(Number);
     const unitSeats = ids.map((id) => seats.find((s) => s.id === id)).filter(Boolean);
     const isSelected = unitSeats.every((s) => selected.has(s.id));

@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <h1>${escapeHtml(ev.title)}</h1>
           <p>${escapeHtml(ev.description_long || ev.description_short)}</p>
           <p><strong>${ev.price} ₺</strong> за место</p>
-          <a class="btn" href="booking.html?event=${ev.id}">Забронировать / Купить билет</a>
+          <a class="btn" href="booking.html?event=${ev.id}">Забронировать</a>
         </div>
       </div>
       ${videoHtml}
