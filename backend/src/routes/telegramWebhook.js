@@ -48,7 +48,18 @@ router.post('/webhook', async (req, res) => {
       FROM booking_seats bs JOIN hall_seats hs ON hs.id = bs.seat_id
       WHERE bs.booking_id = ?
     `).all(booking.id);
-    const seatLabels = seats.map((s) => `${s.table_label}, место ${s.seat_number}`).join('; ');
+    // Гостю бронируется весь столик целиком, а не отдельные места за ним —
+    // поэтому в сообщении перечисляем только сами столики, без слова
+    // «место»/номеров мест. У барных стульев номер важен (это отдельные
+    // одноместные «столики»), у обычных столов — нет.
+    const tableGroups = new Map();
+    seats.forEach((s) => {
+      if (!tableGroups.has(s.table_label)) tableGroups.set(s.table_label, []);
+      tableGroups.get(s.table_label).push(s.seat_number);
+    });
+    const seatLabels = [...tableGroups.entries()]
+      .map(([label, nums]) => (label === 'Бар' ? nums.map((n) => `Бар №${n}`).join(', ') : label))
+      .join(', ');
     const arrivalLine = booking.arrival_time
       ? `🕒 Ждём вас в <b>${telegram.stylizeDigits(booking.arrival_time)}</b>\n`
       : '';
