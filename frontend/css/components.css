@@ -492,13 +492,21 @@ body.menu-lightbox-active { overflow: hidden; }
 .hall-zone-sea {
   background: rgba(59, 130, 189, 0.16);
   border: 1px solid rgba(59, 130, 189, 0.5);
-  overflow: hidden;
+  /* Полоса узкая — развёрнутый текст толще (по высоте строки), чем сама
+     полоса, поэтому overflow оставляем видимым, иначе буквы обрезает
+     сверху и снизу. Сам .hall-map прячет всё, что выходит за его край,
+     так что "лишнее" видно только внутри схемы, а не наружу. */
+  overflow: visible;
 }
 .hall-zone-sea span {
   display: inline-block;
   white-space: nowrap;
   transform: rotate(-90deg);
   font-size: 0.9rem;
+  line-height: 1;
+}
+@media (max-width: 640px) {
+  .hall-zone-sea span { font-size: 0.75rem; }
 }
 
 /* Квадратик стола на схеме зала — один квадрат = весь стол (бронируется
