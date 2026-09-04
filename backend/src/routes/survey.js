@@ -10,6 +10,19 @@ function formatDateRu(isoDate) {
   return y && m && d ? `${d}.${m}.${y}` : isoDate;
 }
 
+// Контакт гостя для персонала, по приоритету: username в Telegram (кликабельная
+// ссылка, открывает переписку с гостем напрямую) -> email -> "нет контакта"
+// (бесплатная бронь без подтверждения через бота — email не собирался).
+function contactLine(booking) {
+  if (booking.telegram_username) {
+    return `Telegram: <a href="https://t.me/${booking.telegram_username}">@${booking.telegram_username}</a>`;
+  }
+  if (booking.customer_email) {
+    return `Email: ${escapeHtml(booking.customer_email)}`;
+  }
+  return 'Контакт не указан — свяжитесь через бронь ' + escapeHtml(booking.booking_ref);
+}
+
 function escapeHtml(str) {
   return String(str == null ? '' : str)
     .replace(/&/g, '&amp;')
@@ -136,7 +149,19 @@ router.post('/:token', express.urlencoded({ extended: false }), async (req, res)
         '#отзыв\n' +
         `Мероприятие: «${escapeHtml(event.title)}», ${formatDateRu(event.event_date)}\n` +
         `Гость: ${escapeHtml(booking.customer_name)}\n` +
-        `Отзыв: ${escapeHtml(cleanComment)}`
+        `Отзыв: ${escapeHtml(cleanComment)}\n` +
+        contactLine(booking)
+      );
+    }
+
+    // Низкая оценка хотя бы по одной категории — стоит связаться с гостем,
+    // даже если он не оставил текст. Отдельное сообщение, чтобы не потерялось
+    // среди обычных #Опрос с хорошими оценками.
+    if (ratings.some((r) => r <= 3)) {
+      await telegram.sendMessage(staffChatId,
+        '⚠️ Низкая оценка — возможно, стоит связаться с гостем\n\n' +
+        `Гость: ${escapeHtml(booking.customer_name)}\n` +
+        contactLine(booking)
       );
     }
   }

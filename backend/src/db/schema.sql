@@ -62,10 +62,16 @@ CREATE TABLE IF NOT EXISTS bookings (
   -- для миграции этих колонок на уже существующих базах).
   telegram_link_token TEXT UNIQUE,   -- payload в t.me/<bot>?start=<token>
   telegram_chat_id TEXT,             -- chat_id, полученный после /start
+  telegram_username TEXT,            -- @username гостя (может отсутствовать), для связи при плохом отзыве
   attendance_status TEXT NOT NULL DEFAULT 'pending', -- pending | confirmed | declined | expired
   reminder_sent_at TEXT,             -- когда отправили последнее напоминание
   arrival_time TEXT,                 -- HH:MM, во сколько гость планирует подойти
-  reminder_count INTEGER NOT NULL DEFAULT 0 -- ступень напоминаний в день мероприятия: 0-2 для ветки "нет ответа", 3 = уже переспросили подтвердившего гостя (см. reminderScheduler.js)
+  reminder_count INTEGER NOT NULL DEFAULT 0, -- ступень напоминаний в день мероприятия: 0-2 для ветки "нет ответа", 3 = уже переспросили подтвердившего гостя (см. reminderScheduler.js)
+  party_size INTEGER,                -- сколько гостей выбрано при бронировании (не равно числу мест за столиком)
+  -- Проверка явки после начала мероприятия (см. reminderScheduler.js):
+  -- «Вы уже здесь?» с двумя кнопками, снимаем бронь, если 15 минут тишины.
+  arrival_check_sent_at TEXT,
+  arrival_confirmed_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS booking_seats (
@@ -105,3 +111,24 @@ CREATE TABLE IF NOT EXISTS kv_store (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+-- Лист ожидания: гость оставляет контакт, когда для его компании нет
+-- свободных столиков. При любом освобождении места на этом мероприятии
+-- уведомляются ВСЕ ожидающие разом (см. waitlistNotifier.js) — кто первый
+-- забронирует, тот и получит место, отдельного холда за конкретным
+-- гостём из списка не делаем.
+CREATE TABLE IF NOT EXISTS waitlist (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  party_size INTEGER NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL DEFAULT '',
+  telegram_chat_id TEXT,
+  telegram_link_token TEXT UNIQUE,
+  leave_token TEXT UNIQUE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'waiting', -- waiting | left
+  notified_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_waitlist_event ON waitlist(event_id);

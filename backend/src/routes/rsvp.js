@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db/connection');
 const telegram = require('../services/telegram');
 const { broadcastSeatUpdate } = require('../ws/socket');
+const { notifyWaitlist } = require('../services/waitlistNotifier');
 
 const router = express.Router();
 
@@ -62,6 +63,7 @@ router.get('/:ref/:action', async (req, res) => {
     if (action === 'decline') {
       db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(booking.id);
       broadcastSeatUpdate(booking.event_id);
+      notifyWaitlist(booking.event_id).catch((err) => console.error('[waitlist] error:', err));
 
       const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
       if (staffChatId) {

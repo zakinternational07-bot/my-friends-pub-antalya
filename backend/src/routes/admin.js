@@ -205,7 +205,8 @@ router.get('/bookings', (req, res) => {
 router.get('/surveys', (req, res) => {
   const rows = db.prepare(`
     SELECT s.id, s.submitted_at, s.rating_service, s.rating_food, s.rating_drinks, s.rating_overall, s.comment,
-           b.customer_name, b.booking_ref, e.title as event_title, e.event_date as event_date
+           b.customer_name, b.booking_ref, b.customer_email, b.telegram_username,
+           e.title as event_title, e.event_date as event_date
     FROM surveys s
     JOIN bookings b ON b.id = s.booking_id
     JOIN events e ON e.id = s.event_id

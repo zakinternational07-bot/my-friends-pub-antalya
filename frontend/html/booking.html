@@ -53,6 +53,22 @@
 
     <div class="card booking-summary" id="booking-summary">Выберите свободные места на схеме</div>
 
+    <div class="card waitlist-card" id="waitlist-card" style="display:none;padding:20px;margin-top:20px;">
+      <p style="margin:0 0 14px;">Свободных столиков на такую компанию сейчас нет. Оставьте контакт — как только место освободится, мы уведомим вас первыми.</p>
+      <div id="waitlist-form-wrap">
+        <div class="form-field">
+          <label for="waitlist-name">Имя</label>
+          <input type="text" id="waitlist-name" />
+        </div>
+        <div class="form-field">
+          <label for="waitlist-email">Email (на него придёт уведомление)</label>
+          <input type="email" id="waitlist-email" />
+        </div>
+        <div id="waitlist-error"></div>
+        <button type="button" id="waitlist-submit" class="btn btn-block">Встать в лист ожидания</button>
+      </div>
+    </div>
+
     <form id="booking-form" class="card" style="padding:20px;margin-top:20px;">
       <div id="booking-error"></div>
       <div class="form-field">

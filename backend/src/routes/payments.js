@@ -4,6 +4,7 @@ const { getPaymentProvider } = require('../services/payment');
 const { getEmailService } = require('../services/email');
 const { generateQrDataUrl, ticketEmailHtml, addMinutesToTime } = require('../services/ticket');
 const { broadcastSeatUpdate } = require('../ws/socket');
+const { notifyWaitlist } = require('../services/waitlistNotifier');
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.post('/mock/confirm', async (req, res) => {
   if (new Date(booking.hold_expires_at) < new Date()) {
     db.prepare("UPDATE bookings SET status = 'expired' WHERE id = ?").run(booking.id);
     broadcastSeatUpdate(booking.event_id);
+    notifyWaitlist(booking.event_id).catch((err) => console.error('[waitlist] error:', err));
     return res.status(409).json({ error: 'Время брони истекло, начните заново' });
   }
 
