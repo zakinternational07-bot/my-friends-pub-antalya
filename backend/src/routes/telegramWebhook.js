@@ -21,6 +21,9 @@ router.post('/webhook', async (req, res) => {
     const token = match[1];
     const chatId = message.chat && message.chat.id;
     if (!chatId) return;
+    // Username нужен, чтобы персонал мог написать гостю напрямую при плохом
+    // отзыве (см. survey.js) — у части пользователей Telegram его нет.
+    const username = (message.from && message.from.username) || null;
 
     const booking = db.prepare('SELECT * FROM bookings WHERE telegram_link_token = ?').get(token);
     if (!booking) {
@@ -39,8 +42,8 @@ router.post('/webhook', async (req, res) => {
     }
 
     db.prepare(
-      "UPDATE bookings SET status = 'paid', paid_at = datetime('now'), telegram_chat_id = ? WHERE id = ?"
-    ).run(String(chatId), booking.id);
+      "UPDATE bookings SET status = 'paid', paid_at = datetime('now'), telegram_chat_id = ?, telegram_username = ? WHERE id = ?"
+    ).run(String(chatId), username, booking.id);
 
     const event = db.prepare('SELECT * FROM events WHERE id = ?').get(booking.event_id);
     const seats = db.prepare(`

@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   -- для миграции этих колонок на уже существующих базах).
   telegram_link_token TEXT UNIQUE,   -- payload в t.me/<bot>?start=<token>
   telegram_chat_id TEXT,             -- chat_id, полученный после /start
+  telegram_username TEXT,            -- @username гостя (может отсутствовать), для связи при плохом отзыве
   attendance_status TEXT NOT NULL DEFAULT 'pending', -- pending | confirmed | declined | expired
   reminder_sent_at TEXT,             -- когда отправили последнее напоминание
   arrival_time TEXT,                 -- HH:MM, во сколько гость планирует подойти

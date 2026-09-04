@@ -24,6 +24,7 @@ const bookingColumns = db.prepare("PRAGMA table_info(bookings)").all().map((c) =
 const migrations = {
   telegram_link_token: 'ALTER TABLE bookings ADD COLUMN telegram_link_token TEXT',
   telegram_chat_id: 'ALTER TABLE bookings ADD COLUMN telegram_chat_id TEXT',
+  telegram_username: 'ALTER TABLE bookings ADD COLUMN telegram_username TEXT',
   attendance_status: "ALTER TABLE bookings ADD COLUMN attendance_status TEXT NOT NULL DEFAULT 'pending'",
   reminder_sent_at: 'ALTER TABLE bookings ADD COLUMN reminder_sent_at TEXT',
   arrival_time: 'ALTER TABLE bookings ADD COLUMN arrival_time TEXT',
