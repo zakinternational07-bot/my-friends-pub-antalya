@@ -37,5 +37,7 @@ services:
         value: "6"
       - key: REMINDER_CANCEL_HOURS_BEFORE
         value: "3"
+      - key: REMINDER_RECHECK_HOURS_BEFORE
+        value: "4"
       - key: SURVEY_HOURS_AFTER_EVENT
         value: "18"

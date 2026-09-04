@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   attendance_status TEXT NOT NULL DEFAULT 'pending', -- pending | confirmed | declined | expired
   reminder_sent_at TEXT,             -- когда отправили последнее напоминание
   arrival_time TEXT,                 -- HH:MM, во сколько гость планирует подойти
-  reminder_count INTEGER NOT NULL DEFAULT 0 -- сколько напоминаний в день мероприятия уже отправлено (0-2)
+  reminder_count INTEGER NOT NULL DEFAULT 0 -- ступень напоминаний в день мероприятия: 0-2 для ветки "нет ответа", 3 = уже переспросили подтвердившего гостя (см. reminderScheduler.js)
 );
 
 CREATE TABLE IF NOT EXISTS booking_seats (

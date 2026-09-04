@@ -15,6 +15,12 @@ function secondReminderHours() {
 function autoCancelHours() {
   return Number(process.env.REMINDER_CANCEL_HOURS_BEFORE || 3);
 }
+// Планы у людей меняются даже после того, как они уже подтвердили приход —
+// поэтому тех, кто ответил "да" на одно из напоминаний выше, ближе к
+// мероприятию переспрашиваем ещё раз, отдельным (третьим) сценарием.
+function recheckHours() {
+  return Number(process.env.REMINDER_RECHECK_HOURS_BEFORE || 4);
+}
 
 function publicBaseUrl() {
   return (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
@@ -46,6 +52,26 @@ async function sendReminder(booking, stage) {
     .run(stage, booking.id);
 }
 
+// Третья ветка (см. sendDueReminders): гость уже нажал "Подтверждаю" на
+// одном из напоминаний выше, но до мероприятия ещё есть время что-то
+// поменять в планах — переспрашиваем один раз тем же вопросом с теми же
+// кнопками. reminder_count поднимаем до 3, чтобы не спросить дважды.
+async function sendRecheck(booking) {
+  const base = publicBaseUrl();
+  const buttons = telegram.urlButtonsRow([
+    { text: '✅ Подтверждаю', url: `${base}/rsvp/${booking.booking_ref}/confirm` },
+    { text: '❌ Не смогу прийти', url: `${base}/rsvp/${booking.booking_ref}/decline` },
+  ]);
+
+  await telegram.sendMessage(booking.telegram_chat_id,
+    `Спрашиваем ещё раз: вы всё ещё придёте сегодня в <b>${telegram.stylizeDigits(booking.event_time)}</b> на «<b>${booking.event_title}</b>»? Может быть, планы поменялись? 👇`,
+    buttons
+  );
+
+  db.prepare("UPDATE bookings SET reminder_sent_at = datetime('now'), reminder_count = 3 WHERE id = ?")
+    .run(booking.id);
+}
+
 async function autoCancelBooking(booking) {
   db.prepare("UPDATE bookings SET status = 'cancelled', attendance_status = 'expired' WHERE id = ?")
     .run(booking.id);
@@ -74,7 +100,11 @@ async function autoCancelBooking(booking) {
 
 // Находит подтверждённые Telegram-брони на бесплатные мероприятия, у
 // которых ещё нет ответа гостя, и проводит их по ступеням в зависимости
-// от того, сколько времени осталось до мероприятия.
+// от того, сколько времени осталось до мероприятия. Ветка 1 (эта функция,
+// bookings ниже): гость так и не ответил ни на одно напоминание — сначала
+// два напоминания, потом автоотмена. Ветка 3 (bookingsToRecheck): гость
+// уже подтвердил приход раньше, но ближе к мероприятию его переспрашивают
+// ещё раз на случай, если планы поменялись.
 async function sendDueReminders() {
   if (!telegram.isConfigured() || !publicBaseUrl()) return;
 
@@ -105,6 +135,25 @@ async function sendDueReminders() {
     } else if (hoursUntil <= firstAt && booking.reminder_count < 1) {
       await sendReminder(booking, 1);
     }
+  }
+
+  const bookingsToRecheck = db.prepare(`
+    SELECT b.*, e.title as event_title, e.event_date as event_date, e.event_time as event_time
+    FROM bookings b
+    JOIN events e ON e.id = b.event_id
+    WHERE b.status = 'paid'
+      AND b.attendance_status = 'confirmed'
+      AND b.telegram_chat_id IS NOT NULL
+      AND e.price = 0
+      AND b.reminder_count < 3
+  `).all();
+
+  const recheckAt = recheckHours();
+  for (const booking of bookingsToRecheck) {
+    const hoursUntil = (eventDateTimeOf(booking) - now) / (1000 * 60 * 60);
+    if (hoursUntil <= 0 || hoursUntil > recheckAt) continue;
+    // eslint-disable-next-line no-await-in-loop
+    await sendRecheck(booking);
   }
 }
 

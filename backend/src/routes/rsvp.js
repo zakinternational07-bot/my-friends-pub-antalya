@@ -48,9 +48,13 @@ router.get('/:ref/:action', async (req, res) => {
 
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(booking.event_id);
 
-  // Повторное нажатие той же кнопки (или обеих) не должно ломаться —
-  // просто ещё раз показываем результат, без повторных уведомлений.
-  if (booking.attendance_status === 'pending') {
+  // Повторное нажатие той же кнопки не должно ломаться — просто ещё раз
+  // показываем результат, без повторных уведомлений. Отдельно: гость мог
+  // уже подтвердить приход раньше, а потом передумать на переспросе
+  // ближе к мероприятию (см. reminderScheduler.js sendRecheck) — decline
+  // с состояния "confirmed" тоже обрабатываем, а не только с "pending".
+  const wasReconfirm = booking.attendance_status === 'confirmed';
+  if (booking.attendance_status === 'pending' || (wasReconfirm && action === 'decline')) {
     db.prepare('UPDATE bookings SET attendance_status = ? WHERE id = ?')
       .run(action === 'confirm' ? 'confirmed' : 'declined', booking.id);
     booking.attendance_status = action === 'confirm' ? 'confirmed' : 'declined';
@@ -62,7 +66,7 @@ router.get('/:ref/:action', async (req, res) => {
       const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
       if (staffChatId) {
         await telegram.sendMessage(staffChatId,
-          `❌ Бронь отменена гостем\n«${event.title}», ${event.event_date} ${event.event_time}\n${booking.customer_name}, бронь ${booking.booking_ref}`
+          `❌ Бронь отменена гостем${wasReconfirm ? ' (передумал после подтверждения)' : ''}\n«${event.title}», ${event.event_date} ${event.event_time}\n${booking.customer_name}, бронь ${booking.booking_ref}`
         );
       }
     }
