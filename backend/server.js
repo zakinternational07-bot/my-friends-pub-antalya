@@ -16,6 +16,7 @@ const rsvpRouter = require('./src/routes/rsvp');
 const surveyRouter = require('./src/routes/survey');
 const waitlistRouter = require('./src/routes/waitlist');
 const waitlistLeaveRouter = require('./src/routes/waitlistLeave');
+const arrivalRouter = require('./src/routes/arrival');
 const { uploadsDir } = require('./src/middleware/upload');
 const { initWebSocket } = require('./src/ws/socket');
 const telegram = require('./src/services/telegram');
@@ -47,6 +48,7 @@ app.use('/rsvp', rsvpRouter);
 app.use('/survey', surveyRouter);
 app.use('/api/waitlist', waitlistRouter);
 app.use('/waitlist', waitlistLeaveRouter);
+app.use('/arrival', arrivalRouter);
 
 const frontendDir = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendDir));

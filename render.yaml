@@ -37,5 +37,7 @@ services:
         value: "6"
       - key: REMINDER_CANCEL_HOURS_BEFORE
         value: "3"
+      - key: ARRIVAL_CHECK_GRACE_MINUTES
+        value: "15"
       - key: SURVEY_HOURS_AFTER_EVENT
         value: "18"

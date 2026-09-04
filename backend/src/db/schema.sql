@@ -67,7 +67,11 @@ CREATE TABLE IF NOT EXISTS bookings (
   reminder_sent_at TEXT,             -- когда отправили последнее напоминание
   arrival_time TEXT,                 -- HH:MM, во сколько гость планирует подойти
   reminder_count INTEGER NOT NULL DEFAULT 0, -- сколько напоминаний в день мероприятия уже отправлено (0-2)
-  party_size INTEGER                 -- сколько гостей выбрано при бронировании (не равно числу мест за столиком)
+  party_size INTEGER,                -- сколько гостей выбрано при бронировании (не равно числу мест за столиком)
+  -- Проверка явки после начала мероприятия (см. reminderScheduler.js):
+  -- «Вы уже здесь?» с двумя кнопками, снимаем бронь, если 15 минут тишины.
+  arrival_check_sent_at TEXT,
+  arrival_confirmed_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS booking_seats (
