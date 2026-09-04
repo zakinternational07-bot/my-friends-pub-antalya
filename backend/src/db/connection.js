@@ -29,6 +29,7 @@ const migrations = {
   reminder_sent_at: 'ALTER TABLE bookings ADD COLUMN reminder_sent_at TEXT',
   arrival_time: 'ALTER TABLE bookings ADD COLUMN arrival_time TEXT',
   reminder_count: 'ALTER TABLE bookings ADD COLUMN reminder_count INTEGER NOT NULL DEFAULT 0',
+  party_size: 'ALTER TABLE bookings ADD COLUMN party_size INTEGER',
 };
 for (const [column, sql] of Object.entries(migrations)) {
   if (!bookingColumns.includes(column)) db.exec(sql);

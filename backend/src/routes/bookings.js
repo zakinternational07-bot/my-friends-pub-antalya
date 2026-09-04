@@ -9,13 +9,16 @@ const telegram = require('../services/telegram');
 const router = express.Router();
 
 router.post('/', (req, res) => {
-  const { eventId, seatIds, name, email, arrivalTime } = req.body || {};
+  const { eventId, seatIds, name, email, arrivalTime, partySize } = req.body || {};
 
-  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !arrivalTime) {
-    return res.status(400).json({ error: 'Заполните имя, время прихода и выберите хотя бы одно место' });
+  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !arrivalTime || !partySize) {
+    return res.status(400).json({ error: 'Заполните имя, время прихода, количество гостей и выберите хотя бы одно место' });
   }
   if (!/^\d{2}:\d{2}$/.test(arrivalTime)) {
     return res.status(400).json({ error: 'Некорректное время прихода' });
+  }
+  if (!Number.isInteger(Number(partySize)) || Number(partySize) < 1) {
+    return res.status(400).json({ error: 'Некорректное количество гостей' });
   }
 
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
@@ -61,9 +64,9 @@ router.post('/', (req, res) => {
       const telegramLinkToken = crypto.randomBytes(16).toString('hex');
 
       const bookingInfo = db.prepare(`
-        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token, arrival_time)
-        VALUES (?, ?, ?, ?, 'held', ?, ?, ?, ?)
-      `).run(eventId, bookingRef, name, customerEmail, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime);
+        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token, arrival_time, party_size)
+        VALUES (?, ?, ?, ?, 'held', ?, ?, ?, ?, ?)
+      `).run(eventId, bookingRef, name, customerEmail, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime, Number(partySize));
 
       const insertSeat = db.prepare(
         'INSERT INTO booking_seats (booking_id, seat_id, event_id) VALUES (?, ?, ?)'

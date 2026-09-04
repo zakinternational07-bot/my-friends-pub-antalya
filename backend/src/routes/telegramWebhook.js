@@ -90,11 +90,16 @@ router.post('/webhook', async (req, res) => {
       ? `\n⏰ <tg-spoiler><b>Бронь держится ещё ${telegram.stylizeDigits('15')} минут</b> сверх названного времени.</tg-spoiler>\n`
       : '';
 
+    const partySizeLine = booking.party_size
+      ? `👥 Количество гостей: <b>${telegram.stylizeDigits(booking.party_size)}</b>\n`
+      : '';
+
     await telegram.sendMessage(chatId,
       `Здравствуйте, ${booking.customer_name}! 👋\n\n` +
       `Ваша бронь на «<b>${event.title}</b>» принята.\n` +
       `📅 ${event.event_date} в <b>${telegram.stylizeDigits(event.event_time)}</b>\n` +
       `💺 ${seatLabels}\n` +
+      partySizeLine +
       arrivalLine +
       graceLine +
       `\nВ день мероприятия пришлём сюда же напоминание — нужно будет подтвердить, что вы придёте, одним нажатием.`

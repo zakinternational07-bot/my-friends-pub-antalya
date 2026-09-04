@@ -257,6 +257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         name,
         email,
         arrivalTime,
+        partySize,
       });
       if (isFreeEvent() && result.telegramUrl) {
         window.open(result.telegramUrl, '_blank', 'noopener');
