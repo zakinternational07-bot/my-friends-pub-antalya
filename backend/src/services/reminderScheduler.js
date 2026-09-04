@@ -2,7 +2,6 @@ const db = require('../db/connection');
 const telegram = require('./telegram');
 const { broadcastSeatUpdate } = require('../ws/socket');
 const { notifyWaitlist } = require('./waitlistNotifier');
-const { getEmailService } = require('./email');
 
 // Три ступени для неподтверждённых Telegram-броней на бесплатные
 // мероприятия: первое напоминание за N1 часов, второе (последний шанс) —
@@ -53,51 +52,21 @@ async function sendReminder(booking, stage) {
     .run(stage, booking.id);
 }
 
-function noShowCancelEmailHtml({ eventTitle }) {
-  return `<!doctype html>
-<html lang="ru">
-<head><meta charset="utf-8"><title>Бронь снята — My Friends Pub Antalya</title></head>
-<body style="margin:0;padding:24px;background:#1a1a1a;color:#f5f5f5;font-family:Arial,sans-serif;">
-  <div style="max-width:480px;margin:0 auto;background:#242424;border:1px solid #3a3a3a;border-radius:8px;overflow:hidden;">
-    <div style="background:#c0272d;padding:16px 24px;">
-      <h1 style="margin:0;font-size:20px;letter-spacing:1px;">MY FRIENDS PUB ANTALYA</h1>
-    </div>
-    <div style="padding:24px;">
-      <blockquote style="margin:0 0 20px;padding:12px 16px;border-left:3px solid #c0272d;background:#1e1e1e;font-style:italic;color:#ddd;line-height:1.5;">
-        «Мы вас ждали, час пробил,<br>Только гость не приходил.<br>Стол пришлось, увы, отдать —<br>Будем рады вновь принять!»
-      </blockquote>
-      <p style="margin:0;color:#ccc;line-height:1.5;">Ваша бронь на «${eventTitle}» снята из-за отсутствия подтверждения — место передано другим гостям. Будем рады видеть вас на другом мероприятии 💛</p>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
 // Одно сообщение: сначала четверостишье в оформлении цитаты (blockquote +
 // кавычки-«ёлочки» + моноширинный <code> — выбрали этот вариант вместо
 // курсива, чтобы сильнее выделялось на фоне остального текста), потом
 // тем же сообщением — то же самое понятным языком, без стихов. Общая для
 // обоих сценариев автоотмены: не ответили до мероприятия и не отметились
-// после его начала. Telegram, если бронь подтверждали через бота, иначе
-// email — платные брони Telegram вообще не привязывают.
-async function sendNoShowCancelNotice(booking) {
-  if (booking.telegram_chat_id) {
-    await telegram.sendMessage(booking.telegram_chat_id,
-      '<blockquote><code>«Мы вас ждали, час пробил,\n' +
-      'Только гость не приходил.\n' +
-      'Стол пришлось, увы, отдать —\n' +
-      'Будем рады вновь принять!»</code></blockquote>\n\n' +
-      `Ваша бронь на «<b>${booking.event_title}</b>» снята из-за отсутствия подтверждения — место передано другим гостям.\n` +
-      'Будем рады видеть вас на другом мероприятии 💛'
-    );
-  } else if (booking.customer_email) {
-    const emailService = getEmailService();
-    await emailService.send({
-      to: booking.customer_email,
-      subject: `Бронь снята — ${booking.event_title}`,
-      html: noShowCancelEmailHtml({ eventTitle: booking.event_title }),
-    });
-  }
+// после его начала.
+async function sendNoShowCancelNotice(chatId, eventTitle) {
+  await telegram.sendMessage(chatId,
+    '<blockquote><code>«Мы вас ждали, час пробил,\n' +
+    'Только гость не приходил.\n' +
+    'Стол пришлось, увы, отдать —\n' +
+    'Будем рады вновь принять!»</code></blockquote>\n\n' +
+    `Ваша бронь на «<b>${eventTitle}</b>» снята из-за отсутствия подтверждения — место передано другим гостям.\n` +
+    'Будем рады видеть вас на другом мероприятии 💛'
+  );
 }
 
 async function autoCancelBooking(booking) {
@@ -106,7 +75,7 @@ async function autoCancelBooking(booking) {
   broadcastSeatUpdate(booking.event_id);
   notifyWaitlist(booking.event_id).catch((err) => console.error('[waitlist] error:', err));
 
-  await sendNoShowCancelNotice(booking);
+  await sendNoShowCancelNotice(booking.telegram_chat_id, booking.event_title);
 
   const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
   if (staffChatId) {
@@ -116,68 +85,37 @@ async function autoCancelBooking(booking) {
   }
 }
 
-function arrivalCheckEmailHtml({ eventTitle, hereUrl, cancelUrl, graceMinutes }) {
-  return `<!doctype html>
-<html lang="ru">
-<head><meta charset="utf-8"><title>Вы уже здесь? — My Friends Pub Antalya</title></head>
-<body style="margin:0;padding:24px;background:#1a1a1a;color:#f5f5f5;font-family:Arial,sans-serif;">
-  <div style="max-width:480px;margin:0 auto;background:#242424;border:1px solid #3a3a3a;border-radius:8px;overflow:hidden;">
-    <div style="background:#c0272d;padding:16px 24px;">
-      <h1 style="margin:0;font-size:20px;letter-spacing:1px;">MY FRIENDS PUB ANTALYA</h1>
-    </div>
-    <div style="padding:24px;">
-      <h2 style="margin:0 0 16px;font-size:20px;">Мероприятие «${eventTitle}» уже началось — вы с нами?</h2>
-      <p style="margin:0 0 20px;color:#ccc;line-height:1.5;">Если не ответите в течение ${graceMinutes} минут, столик придётся отдать другим гостям.</p>
-      <a href="${hereUrl}" style="display:inline-block;background:#c0272d;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold;margin:0 10px 10px 0;">✅ Я уже здесь</a>
-      <a href="${cancelUrl}" style="display:inline-block;background:#3a3a3a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold;">❌ Не успею</a>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-// В момент начала мероприятия спрашиваем гостей «Вы уже здесь?» — двумя
-// кнопками-ссылками (см. arrival.js). Telegram, если бронь подтверждали
-// через бота (бесплатные события), иначе email — так добираемся и до
-// платных броней, для которых Telegram вообще не привязывается.
+// В момент начала мероприятия спрашиваем гостей, подтвердивших бронь через
+// бота, «Вы уже здесь?» — двумя кнопками-ссылками, как и остальные
+// подтверждения (см. arrival.js).
 async function sendArrivalCheck(booking) {
   const base = publicBaseUrl();
-  const hereUrl = `${base}/arrival/${booking.booking_ref}/here`;
-  const cancelUrl = `${base}/arrival/${booking.booking_ref}/cancel`;
+  const buttons = telegram.urlButtonsRow([
+    { text: '✅ Я уже здесь', url: `${base}/arrival/${booking.booking_ref}/here` },
+    { text: '❌ Не успею', url: `${base}/arrival/${booking.booking_ref}/cancel` },
+  ]);
   const graceMinutes = String(arrivalCheckGraceMinutes());
 
-  if (booking.telegram_chat_id) {
-    const buttons = telegram.urlButtonsRow([
-      { text: '✅ Я уже здесь', url: hereUrl },
-      { text: '❌ Не успею', url: cancelUrl },
-    ]);
-    await telegram.sendMessage(booking.telegram_chat_id,
-      `Мероприятие «<b>${booking.event_title}</b>» уже началось — вы с нами? 👇\n\n` +
-      `<tg-spoiler>Если не ответите в течение ${telegram.stylizeDigits(graceMinutes)} минут, столик придётся отдать другим гостям.</tg-spoiler>`,
-      buttons
-    );
-  } else if (booking.customer_email) {
-    const emailService = getEmailService();
-    await emailService.send({
-      to: booking.customer_email,
-      subject: `Вы уже здесь? — ${booking.event_title}`,
-      html: arrivalCheckEmailHtml({ eventTitle: booking.event_title, hereUrl, cancelUrl, graceMinutes }),
-    });
-  }
+  await telegram.sendMessage(booking.telegram_chat_id,
+    `Мероприятие «<b>${booking.event_title}</b>» уже началось — вы с нами? 👇\n\n` +
+    `<tg-spoiler>Если не ответите в течение ${telegram.stylizeDigits(graceMinutes)} минут, столик придётся отдать другим гостям.</tg-spoiler>`,
+    buttons
+  );
 
   db.prepare("UPDATE bookings SET arrival_check_sent_at = datetime('now') WHERE id = ?").run(booking.id);
 }
 
-// Все оплаченные брони (платные и бесплатные), для которых мероприятие уже
+// Оплаченные/подтверждённые Telegram-брони, для которых мероприятие уже
 // началось, а вопрос «Вы уже здесь?» ещё не отправляли.
 async function sendDueArrivalChecks() {
-  if (!publicBaseUrl()) return;
+  if (!telegram.isConfigured() || !publicBaseUrl()) return;
 
   const bookings = db.prepare(`
     SELECT b.*, e.title as event_title, e.event_date as event_date, e.event_time as event_time
     FROM bookings b
     JOIN events e ON e.id = b.event_id
     WHERE b.status = 'paid'
+      AND b.telegram_chat_id IS NOT NULL
       AND b.arrival_check_sent_at IS NULL
   `).all();
 
@@ -213,7 +151,7 @@ async function autoReleaseNoShows() {
     notifyWaitlist(booking.event_id).catch((err) => console.error('[waitlist] error:', err));
 
     // eslint-disable-next-line no-await-in-loop
-    await sendNoShowCancelNotice(booking);
+    await sendNoShowCancelNotice(booking.telegram_chat_id, booking.event_title);
 
     const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
     if (staffChatId) {
