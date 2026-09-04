@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (size === 1) return [...SMALL_TABLES, 'Бар'];
     if (size === 2) return SMALL_TABLES;
     if (size === 3 || size === 4) return MEDIUM_TABLES;
-    return LARGE_TABLES; // 5+
+    return [...LARGE_TABLES, 'Стол 11']; // 5+ — стол 11 тоже годится и на большую компанию
   }
 
   let partySize = null;
