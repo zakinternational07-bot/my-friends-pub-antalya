@@ -1,6 +1,7 @@
 const db = require('../db/connection');
 const telegram = require('./telegram');
 const { broadcastSeatUpdate } = require('../ws/socket');
+const { notifyWaitlist } = require('./waitlistNotifier');
 
 // Три ступени для неподтверждённых Telegram-броней на бесплатные
 // мероприятия: первое напоминание за N1 часов, второе (последний шанс) —
@@ -50,6 +51,7 @@ async function autoCancelBooking(booking) {
   db.prepare("UPDATE bookings SET status = 'cancelled', attendance_status = 'expired' WHERE id = ?")
     .run(booking.id);
   broadcastSeatUpdate(booking.event_id);
+  notifyWaitlist(booking.event_id).catch((err) => console.error('[waitlist] error:', err));
 
   // Одно сообщение: сначала четверостишье в оформлении цитаты (blockquote +
   // кавычки-«ёлочки» + моноширинный <code> — выбрали этот вариант вместо

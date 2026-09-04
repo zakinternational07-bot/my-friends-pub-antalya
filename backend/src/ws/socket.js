@@ -1,5 +1,6 @@
 const { WebSocketServer } = require('ws');
 const { getSeatStatuses, expireStaleBookings } = require('../services/seatHold');
+const { notifyWaitlist } = require('../services/waitlistNotifier');
 
 let wss = null;
 
@@ -29,7 +30,10 @@ function initWebSocket(server) {
   // Периодически освобождаем просроченные брони и уведомляем подписчиков.
   setInterval(() => {
     const affectedEventIds = expireStaleBookings();
-    affectedEventIds.forEach((eventId) => broadcastSeatUpdate(eventId));
+    affectedEventIds.forEach((eventId) => {
+      broadcastSeatUpdate(eventId);
+      notifyWaitlist(eventId).catch((err) => console.error('[waitlist] error:', err));
+    });
   }, 30 * 1000);
 
   return wss;

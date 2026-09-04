@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db/connection');
 const telegram = require('../services/telegram');
 const { broadcastSeatUpdate } = require('../ws/socket');
+const { notifyWaitlist } = require('../services/waitlistNotifier');
 
 const router = express.Router();
 
@@ -25,6 +26,22 @@ router.post('/webhook', async (req, res) => {
     // отзыве (см. survey.js) — у части пользователей Telegram его нет.
     const username = (message.from && message.from.username) || null;
 
+    // Лист ожидания — необязательная привязка Telegram для мгновенных
+    // уведомлений (см. waitlist.js), отличаем по префиксу токена.
+    if (token.startsWith('wl_')) {
+      const entry = db.prepare('SELECT * FROM waitlist WHERE telegram_link_token = ?').get(token);
+      if (!entry) {
+        await telegram.sendMessage(chatId, 'Не нашли лист ожидания по этой ссылке — возможно, она устарела.');
+        return;
+      }
+      db.prepare('UPDATE waitlist SET telegram_chat_id = ? WHERE id = ?').run(String(chatId), entry.id);
+      const event = db.prepare('SELECT * FROM events WHERE id = ?').get(entry.event_id);
+      await telegram.sendMessage(chatId,
+        `Готово! Как только на «<b>${event.title}</b>» освободится место, напишем сюда первыми же. 👍`
+      );
+      return;
+    }
+
     const booking = db.prepare('SELECT * FROM bookings WHERE telegram_link_token = ?').get(token);
     if (!booking) {
       await telegram.sendMessage(chatId, 'Не нашли бронь по этой ссылке — возможно, она уже истекла. Попробуйте забронировать заново на сайте.');
@@ -37,6 +54,7 @@ router.post('/webhook', async (req, res) => {
     if (new Date(booking.hold_expires_at) < new Date()) {
       db.prepare("UPDATE bookings SET status = 'expired' WHERE id = ?").run(booking.id);
       broadcastSeatUpdate(booking.event_id);
+      notifyWaitlist(booking.event_id).catch((err) => console.error('[waitlist] error:', err));
       await telegram.sendMessage(chatId, 'Время брони истекло, места уже не удержаны за вами. Забронируйте заново на сайте.');
       return;
     }

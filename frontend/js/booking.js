@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const formEl = document.getElementById('booking-form');
   const errorEl = document.getElementById('booking-error');
   const partySizeOptionsEl = document.getElementById('party-size-options');
+  const waitlistCardEl = document.getElementById('waitlist-card');
+  const waitlistFormWrapEl = document.getElementById('waitlist-form-wrap');
+  const waitlistErrorEl = document.getElementById('waitlist-error');
+  const waitlistSubmitBtn = document.getElementById('waitlist-submit');
+  const waitlistNameInput = document.getElementById('waitlist-name');
+  const waitlistEmailInput = document.getElementById('waitlist-email');
 
   // Пабу невыгодно отдавать столик на 4 человека паре из двух — поэтому
   // по количеству гостей заранее сужаем список столиков, которые вообще
@@ -85,6 +91,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).join('');
   }
 
+  // Показываем лист ожидания вместо формы брони, если для выбранного числа
+  // гостей вообще нет свободных столиков — самой брони гость всё равно
+  // оформить не может, дальше показывать пустую форму бессмысленно.
+  function updateWaitlistVisibility() {
+    if (!partySize) {
+      waitlistCardEl.style.display = 'none';
+      formEl.style.display = '';
+      return;
+    }
+    const allowed = allowedTableLabels(partySize);
+    const anyFree = tableUnits().some((u) => allowed.includes(u.table_label) && unitStatus(u) === 'free');
+    waitlistCardEl.style.display = anyFree ? 'none' : 'block';
+    formEl.style.display = anyFree ? '' : 'none';
+  }
+
   function selectPartySize(size) {
     partySize = size;
     selected.clear();
@@ -94,6 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     renderSeats();
     renderSummary();
+    updateWaitlistVisibility();
   }
 
   partySizeOptionsEl.addEventListener('click', (e) => {
@@ -131,6 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadSeats() {
     seats = await Api.get(`/api/events/${eventId}/seats`);
     renderSeats();
+    updateWaitlistVisibility();
   }
 
   const submitBtn = formEl.querySelector('button[type="submit"]');
@@ -183,6 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
           renderSeats();
           renderSummary();
+          updateWaitlistVisibility();
         }
       } catch (e) { /* ignore */ }
     });
@@ -192,6 +216,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Фолбэк на случай проблем с WebSocket (например, нестабильный wifi заведения).
   setInterval(loadSeats, 15000);
+
+  waitlistSubmitBtn.addEventListener('click', async () => {
+    waitlistErrorEl.textContent = '';
+    waitlistErrorEl.className = '';
+    const name = waitlistNameInput.value.trim();
+    const email = waitlistEmailInput.value.trim();
+    if (!name) {
+      waitlistErrorEl.textContent = 'Введите имя';
+      waitlistErrorEl.className = 'form-error';
+      return;
+    }
+    waitlistSubmitBtn.disabled = true;
+    try {
+      const result = await Api.post('/api/waitlist', { eventId: Number(eventId), partySize, name, email });
+      waitlistFormWrapEl.innerHTML = `
+        <p class="form-success">Готово — вы в листе ожидания. Как только место освободится, сразу пришлём уведомление на email.</p>
+        ${result.telegramUrl ? `<a class="btn btn-telegram btn-block" href="${result.telegramUrl}" target="_blank" rel="noopener">Уведомлять ещё и в Telegram (быстрее) ✈</a>` : ''}
+      `;
+    } catch (err) {
+      waitlistErrorEl.textContent = err.message;
+      waitlistErrorEl.className = 'form-error';
+      waitlistSubmitBtn.disabled = false;
+    }
+  });
 
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
