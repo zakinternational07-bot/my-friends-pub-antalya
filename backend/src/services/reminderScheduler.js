@@ -58,10 +58,13 @@ async function sendReminder(booking, stage) {
     .run(stage, booking.id);
 }
 
-// Третья ветка (см. sendDueReminders): гость уже нажал "Подтверждаю" на
-// одном из напоминаний выше, но до мероприятия ещё есть время что-то
-// поменять в планах — переспрашиваем один раз тем же вопросом с теми же
-// кнопками. reminder_count поднимаем до 3, чтобы не спросить дважды.
+// Третья ветка (см. sendDueReminders): гость подтвердил на самом первом,
+// 12-часовом напоминании — до мероприятия ещё далеко, планы вполне могут
+// поменяться, поэтому переспрашиваем один раз тем же вопросом с теми же
+// кнопками. Тех, кто подтвердил уже на 6-часовом "последнем шансе", сюда
+// не зовём (см. фильтр reminder_count в sendDueReminders) — до
+// мероприятия и так остаётся немного, лишний раз дёргать незачем.
+// reminder_count поднимаем до 3, чтобы не спросить дважды.
 async function sendRecheck(booking) {
   const base = publicBaseUrl();
   const buttons = telegram.urlButtonsRow([
@@ -228,6 +231,12 @@ async function sendDueReminders() {
     }
   }
 
+  // Переспрашиваем только тех, кто подтвердил на самом первом (12-часовом)
+  // напоминании (reminder_count = 1 на момент подтверждения) — если гость
+  // тянул с ответом до 6-часового "последнего шанса" и всё же подтвердил,
+  // до мероприятия и так осталось немного: дёргать его ещё раз ближе к
+  // началу было бы лишним и раздражало бы гостей. reminder_count < 2
+  // (а не < 3, как для самого переспроса) как раз и отсекает этот случай.
   const bookingsToRecheck = db.prepare(`
     SELECT b.*, e.title as event_title, e.event_date as event_date, e.event_time as event_time
     FROM bookings b
@@ -236,7 +245,7 @@ async function sendDueReminders() {
       AND b.attendance_status = 'confirmed'
       AND b.telegram_chat_id IS NOT NULL
       AND e.price = 0
-      AND b.reminder_count < 3
+      AND b.reminder_count < 2
   `).all();
 
   const recheckAt = recheckHours();
