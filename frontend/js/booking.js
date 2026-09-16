@@ -158,6 +158,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const submitBtn = formEl.querySelector('button[type="submit"]');
   const isFreeEvent = () => event && event.price === 0;
+  // Платное мероприятие, у которого в админке указана внешняя страница
+  // оплаты: вместо своей (тестовой) оплаты отправляем гостя туда.
+  const externalPaymentUrl = () => (event && event.price > 0 && event.payment_url) || '';
 
   const arrivalInput = document.getElementById('arrival_time');
   const arrivalHint = document.getElementById('arrival-hint');
@@ -177,6 +180,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (banner) banner.style.display = 'none';
       // Билет на почту не шлём для бесплатных мероприятий — подтверждение
       // и так приходит в Telegram-бот, почта тут не нужна.
+      emailField.style.display = 'none';
+      emailInput.required = false;
+    } else if (externalPaymentUrl()) {
+      // Билет и письмо выдаёт внешний сайт оплаты, тестовая оплата тут ни при чём.
+      const banner = document.getElementById('test-mode-banner');
+      if (banner) banner.style.display = 'none';
       emailField.style.display = 'none';
       emailInput.required = false;
     }
@@ -246,6 +255,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     errorEl.textContent = '';
     errorEl.className = '';
     if (selected.size === 0) return;
+    const paymentUrl = externalPaymentUrl();
+    if (paymentUrl) {
+      // window.open — строго до любого await, иначе браузер посчитает
+      // вкладку всплывающим окном и заблокирует её.
+      window.open(paymentUrl, '_blank', 'noopener');
+      formEl.innerHTML = `
+        <p class="form-success">Открыли страницу оплаты билетов в новой вкладке.</p>
+        <a class="btn btn-block" href="${escapeHtml(paymentUrl)}" target="_blank" rel="noopener">Открыть оплату ещё раз</a>
+      `;
+      return;
+    }
     const name = formEl.name.value.trim();
     const email = isFreeEvent() ? '' : formEl.email.value.trim();
     const arrivalTime = arrivalInput.value;

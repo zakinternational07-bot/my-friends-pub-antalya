@@ -37,6 +37,11 @@ for (const [column, sql] of Object.entries(migrations)) {
   if (!bookingColumns.includes(column)) db.exec(sql);
 }
 
+const eventColumns = db.prepare("PRAGMA table_info(events)").all().map((c) => c.name);
+if (!eventColumns.includes('payment_url')) {
+  db.exec("ALTER TABLE events ADD COLUMN payment_url TEXT NOT NULL DEFAULT ''");
+}
+
 // ВРЕМЕННЫЙ сид для проверки Telegram-напоминаний (кнопки "Подтверждаю" /
 // "Не смогу прийти"). На бесплатном тарифе Render диск не сохраняется между
 // деплоями, поэтому событие пересоздаётся здесь при каждом старте сервера.

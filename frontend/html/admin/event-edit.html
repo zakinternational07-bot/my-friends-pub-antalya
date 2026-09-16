@@ -35,6 +35,11 @@
         <div class="form-field"><label>Дата</label><input type="date" name="event_date" required /></div>
         <div class="form-field"><label>Время</label><input type="time" name="event_time" required /></div>
         <div class="form-field"><label>Цена за место (₺)</label><input type="number" name="price" min="0" step="1" required /></div>
+        <div class="form-field" id="payment-url-field" style="display:none;">
+          <label>Ссылка на оплату билетов</label>
+          <input type="url" name="payment_url" placeholder="https://..." />
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;">Кнопка «Оплатить билеты» откроет эту ссылку в новой вкладке. Оставь пустым — оплата пойдёт через сайт.</p>
+        </div>
         <button type="submit" class="btn">Сохранить</button>
       </form>
     </main>

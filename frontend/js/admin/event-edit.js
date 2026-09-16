@@ -11,6 +11,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mediaRemoveBtn = document.getElementById('media-remove-btn');
   document.getElementById('event-form-title').textContent = id ? 'Редактировать мероприятие' : 'Новое мероприятие';
 
+  // Поле ссылки на оплату имеет смысл только для платных мероприятий —
+  // у бесплатных бронь подтверждается в Telegram.
+  const paymentUrlField = document.getElementById('payment-url-field');
+  function togglePaymentUrlField() {
+    paymentUrlField.style.display = Number(form.price.value) > 0 ? '' : 'none';
+  }
+  form.price.addEventListener('input', togglePaymentUrlField);
+
   // Текущее состояние медиафайла мероприятия: одно из двух — фото или видео.
   let media = { path: '', type: '' };
 
@@ -75,6 +83,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       form.event_date.value = ev.event_date || '';
       form.event_time.value = ev.event_time || '';
       form.price.value = ev.price || 0;
+      form.payment_url.value = ev.payment_url || '';
+      togglePaymentUrlField();
       if (ev.video_url) {
         media = { path: ev.video_url, type: 'video' };
       } else if (ev.poster_image) {
@@ -98,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       price: Number(form.price.value) || 0,
       poster_image: media.type === 'image' ? media.path : '',
       video_url: media.type === 'video' ? media.path : '',
+      payment_url: form.payment_url.value.trim(),
     };
     try {
       if (id) {

@@ -36,15 +36,30 @@ function splitDescription(description) {
   return { description_short: short, description_long: long };
 }
 
+// Ссылка на внешнюю страницу оплаты билетов — только для платных
+// мероприятий (у бесплатных бронь подтверждается в Telegram). Пустая
+// строка = оплата через сайт, как раньше.
+function paymentUrlFor(e) {
+  const price = Number(e.price) || 0;
+  const url = String(e.payment_url || '').trim();
+  if (price === 0 || !url) return { payment_url: '' };
+  if (!/^https?:\/\/\S+$/i.test(url)) {
+    return { error: 'Ссылка на оплату должна начинаться с http:// или https://' };
+  }
+  return { payment_url: url };
+}
+
 router.post('/events', (req, res) => {
   const e = req.body || {};
   if (!e.title || !e.event_date || !e.event_time) {
     return res.status(400).json({ error: 'title, event_date и event_time обязательны' });
   }
+  const payment = paymentUrlFor(e);
+  if (payment.error) return res.status(400).json({ error: payment.error });
   const slug = e.slug && e.slug.trim() ? e.slug.trim() : slugify(e.title);
   const info = db.prepare(`INSERT INTO events
-    (title, slug, event_date, event_time, price, description_short, description_long, poster_image, video_url)
-    VALUES (@title, @slug, @event_date, @event_time, @price, @description_short, @description_long, @poster_image, @video_url)`
+    (title, slug, event_date, event_time, price, description_short, description_long, poster_image, video_url, payment_url)
+    VALUES (@title, @slug, @event_date, @event_time, @price, @description_short, @description_long, @poster_image, @video_url, @payment_url)`
   ).run({
     title: e.title,
     slug,
@@ -54,6 +69,7 @@ router.post('/events', (req, res) => {
     ...splitDescription(e.description),
     poster_image: e.poster_image || '',
     video_url: e.video_url || '',
+    payment_url: payment.payment_url,
   });
   res.status(201).json(db.prepare('SELECT * FROM events WHERE id = ?').get(info.lastInsertRowid));
 });
@@ -62,6 +78,8 @@ router.put('/events/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM events WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Мероприятие не найдено' });
   const e = req.body || {};
+  const payment = paymentUrlFor(e);
+  if (payment.error) return res.status(400).json({ error: payment.error });
   const merged = {
     ...existing,
     title: e.title,
@@ -71,11 +89,12 @@ router.put('/events/:id', (req, res) => {
     ...splitDescription(e.description),
     poster_image: e.poster_image || '',
     video_url: e.video_url || '',
+    payment_url: payment.payment_url,
     id: req.params.id,
   };
   db.prepare(`UPDATE events SET title=@title, slug=@slug, event_date=@event_date, event_time=@event_time,
     price=@price, description_short=@description_short, description_long=@description_long,
-    poster_image=@poster_image, video_url=@video_url WHERE id=@id`
+    poster_image=@poster_image, video_url=@video_url, payment_url=@payment_url WHERE id=@id`
   ).run(merged);
   res.json(db.prepare('SELECT * FROM events WHERE id = ?').get(req.params.id));
 });

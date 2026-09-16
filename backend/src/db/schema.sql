@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS events (
   description_long TEXT NOT NULL DEFAULT '',
   poster_image TEXT NOT NULL DEFAULT '',
   video_url TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  payment_url TEXT NOT NULL DEFAULT '' -- внешняя страница оплаты билетов (для платных), пусто = своя оплата на сайте
 );
 
 CREATE TABLE IF NOT EXISTS menu_categories (
