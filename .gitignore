@@ -6,3 +6,9 @@ frontend/assets/images/events/*
 frontend/assets/video/events/*
 .DS_Store
 cloudflared.exe
+
+# Рабочая папка для подготовки медиа (см. media/README.md): исходники и
+# результат конвертации в репозиторий не идут, только сам README.
+media/source/*
+media/converted/*
+!media/**/.gitkeep
