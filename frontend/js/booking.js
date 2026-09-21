@@ -76,7 +76,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Платное мероприятие: столы рисуем как раньше, но они только фон —
   // кликаются отдельные стулья вокруг них.
   function renderChairs() {
-    const tables = tableUnits().map((unit) => `<div class="table-unit table-unit-static"
+    // Барные места — это «столы» из одного места, и квадрат стола рисуется
+    // ровно под кружком самого места. Для одиночных мест квадрат не нужен:
+    // достаточно кружка, который и есть посадочное место.
+    const tables = tableUnits().filter((unit) => unit.seatIds.length > 1)
+      .map((unit) => `<div class="table-unit table-unit-static"
         style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
         title="${unit.title}"></div>`).join('');
 
