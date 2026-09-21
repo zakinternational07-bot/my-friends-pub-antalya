@@ -15,7 +15,19 @@
 </head>
 <body>
   <div class="hero">
-    <div class="hero-bg" style="background-image: url('../assets/images/hero-bg.jpg');"></div>
+    <!-- Фон главной: постер виден сразу, видео подгружается после загрузки
+         страницы и плавно проявляется поверх него (см. js/hero-video.js).
+         Если видео не поддерживается, включена экономия трафика или
+         пользователь просил меньше анимации — остаётся постер. -->
+    <div class="hero-bg" style="background-image: url('../assets/images/hero-poster.webp');">
+      <video class="hero-bg-video" id="hero-video"
+             muted loop playsinline preload="none"
+             aria-hidden="true" tabindex="-1"
+             data-webm="../assets/video/hero-background.webm"
+             data-mp4="../assets/video/hero-background.mp4"
+             data-webm-small="../assets/video/hero-background-small.webm"
+             data-mp4-small="../assets/video/hero-background-small.mp4"></video>
+    </div>
     <header class="site-header">
       <div class="logo">My Friends <span>Pub</span> · Antalya</div>
       <div class="lang-switch lang-switch-header">
@@ -47,5 +59,6 @@
 
   <script src="../js/reviews-data.js"></script>
   <script src="../js/reviews.js"></script>
+  <script src="../js/hero-video.js"></script>
 </body>
 </html>

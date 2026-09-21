@@ -23,6 +23,27 @@
   z-index: -2;
 }
 
+/* Видео-фон лежит внутри .hero-bg и повторяет его размытие/масштаб —
+   object-fit:cover даёт ровно то же поведение, что background-size:cover
+   у постера, то есть заполняет экран целиком без искажений пропорций.
+   Проявляется только когда реально начало играть (класс is-playing), —
+   до этого виден постер, и переключение не заметно как рывок. */
+.hero-bg-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.hero-bg-video.is-playing { opacity: 1; }
+
+/* Если человек в системе просил уменьшить анимацию — не показываем видео
+   вообще, остаётся статичный постер. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg-video { display: none; }
+}
+
 .hero::after {
   content: '';
   position: fixed;
