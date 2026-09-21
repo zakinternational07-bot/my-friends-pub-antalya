@@ -35,6 +35,15 @@ router.post('/', (req, res) => {
   }
   const customerEmail = isFree ? '' : email;
 
+  // На платных мероприятиях каждое место — отдельный билет, поэтому мест
+  // должно быть ровно столько, сколько гостей. На бесплатных столик
+  // бронируется целиком, и мест в нём обычно больше, чем гостей.
+  if (event.price > 0 && seatIds.length !== Number(partySize)) {
+    return res.status(400).json({
+      error: `Выберите ${partySize} ${Number(partySize) === 1 ? 'место' : 'мест'} — по одному на каждого гостя`,
+    });
+  }
+
   const validSeats = db.prepare(
     `SELECT id FROM hall_seats WHERE id IN (${seatIds.map(() => '?').join(',')})`
   ).all(...seatIds);

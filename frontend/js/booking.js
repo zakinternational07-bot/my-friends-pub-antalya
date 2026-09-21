@@ -73,7 +73,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     return 'free';
   }
 
+  // Платное мероприятие: столы рисуем как раньше, но они только фон —
+  // кликаются отдельные стулья вокруг них.
+  function renderChairs() {
+    const tables = tableUnits().map((unit) => `<div class="table-unit table-unit-static"
+        style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
+        title="${unit.title}"></div>`).join('');
+
+    const chairs = seats.map((seat) => {
+      const isSelected = selected.has(seat.id);
+      return `<div class="seat${isSelected ? ' selected' : ''}"
+        data-id="${seat.id}"
+        data-status="${isSelected ? 'free' : seat.status}"
+        style="left:${seat.pos_x}%; top:${seat.pos_y}%;"
+        title="${seatLabel(seat)}"></div>`;
+    }).join('');
+
+    seatsLayerEl.innerHTML = tables + chairs;
+  }
+
   function renderSeats() {
+    if (isTicketedEvent()) {
+      renderChairs();
+      return;
+    }
     const allowed = partySize ? allowedTableLabels(partySize) : null;
     seatsLayerEl.innerHTML = tableUnits().map((unit) => {
       const status = unitStatus(unit);
@@ -98,6 +121,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!partySize) {
       waitlistCardEl.style.display = 'none';
       formEl.style.display = '';
+      return;
+    }
+    if (isTicketedEvent()) {
+      // Мест хватает, если свободных стульев не меньше, чем гостей.
+      const freeChairs = seats.filter((s) => s.status === 'free').length;
+      const enough = freeChairs >= partySize;
+      waitlistCardEl.style.display = enough ? 'none' : 'block';
+      formEl.style.display = enough ? '' : 'none';
       return;
     }
     const allowed = allowedTableLabels(partySize);
@@ -127,17 +158,55 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderSummary() {
     const count = selected.size;
     const total = event ? event.price * count : 0;
+    const submitEl = formEl.querySelector('button[type="submit"]');
+
+    if (isTicketedEvent()) {
+      // Стульев нужно выбрать ровно по числу гостей: каждый стул — билет.
+      if (!partySize) {
+        summaryEl.innerHTML = 'Сначала выберите количество гостей';
+      } else if (count === 0) {
+        summaryEl.innerHTML = `Выберите на схеме места: нужно <strong>${partySize}</strong>`;
+      } else if (count < partySize) {
+        summaryEl.innerHTML = `Выбрано мест: <strong>${count}</strong> из ${partySize} · Сумма: <strong>${total} ₺</strong>`;
+      } else {
+        summaryEl.innerHTML = `Выбрано мест: <strong>${count}</strong> из ${partySize} · Сумма: <strong>${total} ₺</strong><br>`
+          + '<span style="color:var(--text-muted);font-size:0.85rem;">Чтобы поменять место, снимите выбор с уже выбранного</span>';
+      }
+      submitEl.disabled = count !== partySize;
+      return;
+    }
+
     const totalText = event && event.price === 0 ? 'вход бесплатный' : `Сумма: <strong>${total} ₺</strong>`;
     summaryEl.innerHTML = count
       ? `Выбрано мест: <strong>${count}</strong> · ${totalText}`
       : partySize
         ? 'Выберите свободный столик на схеме'
         : 'Сначала выберите количество гостей';
-    formEl.querySelector('button[type="submit"]').disabled = count === 0;
+    submitEl.disabled = count === 0;
   }
 
   mapEl.addEventListener('click', (e) => {
     if (!partySize) return;
+
+    if (isTicketedEvent()) {
+      const chairEl = e.target.closest('.seat');
+      if (!chairEl) return;
+      const id = Number(chairEl.dataset.id);
+      const seat = seats.find((s) => s.id === id);
+      if (!seat) return;
+      if (selected.has(id)) {
+        selected.delete(id);
+      } else {
+        if (seat.status !== 'free') return;
+        // Больше мест, чем гостей, не продаём — сначала снять лишнее.
+        if (selected.size >= partySize) return;
+        selected.add(id);
+      }
+      renderSeats();
+      renderSummary();
+      return;
+    }
+
     const unitEl = e.target.closest('.table-unit');
     if (!unitEl || unitEl.classList.contains('table-unit-disabled')) return;
     const ids = unitEl.dataset.ids.split(',').map(Number);
@@ -158,6 +227,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const submitBtn = formEl.querySelector('button[type="submit"]');
   const isFreeEvent = () => event && event.price === 0;
+  // На платных мероприятиях билет продаётся на конкретный стул, а не на
+  // столик целиком: столы на схеме остаются, но выбираются стулья вокруг
+  // них — ровно столько, сколько гостей.
+  const isTicketedEvent = () => event && event.price > 0;
   // Платное мероприятие, у которого в админке указана внешняя страница
   // оплаты: вместо своей (тестовой) оплаты отправляем гостя туда.
   const externalPaymentUrl = () => (event && event.price > 0 && event.payment_url) || '';
