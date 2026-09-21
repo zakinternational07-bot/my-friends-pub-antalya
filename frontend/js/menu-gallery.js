@@ -26,8 +26,24 @@ document.addEventListener('DOMContentLoaded', () => {
   let index = 0;
   let lightboxOpen = false;
 
+  // Каждая страница меню лежит в двух форматах: .webp (легче примерно
+  // вдвое) и .jpg как запасной — webp не понимают iOS младше 14 и совсем
+  // старые Android. Формат выбираем один раз, до первой отрисовки, чтобы
+  // не скачать одну и ту же страницу дважды.
+  let pageExt = 'jpg';
+
+  function detectWebp() {
+    return new Promise((resolve) => {
+      const probe = new Image();
+      probe.onload = () => resolve(probe.width === 1);
+      probe.onerror = () => resolve(false);
+      // Картинка 1x1 в webp прямо в коде — проверка без запроса к серверу.
+      probe.src = 'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA=';
+    });
+  }
+
   function pageSrc(i) {
-    return `${BASE_PATH}${PAGE_NUMBERS[i]}.jpg`;
+    return `${BASE_PATH}${PAGE_NUMBERS[i]}.${pageExt}`;
   }
 
   function preload(i) {
@@ -244,5 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
   zoomHintEl.textContent = ZOOM_HINT;
   imgEl.closest('.menu-gallery-frame').appendChild(zoomHintEl);
 
-  render();
+  detectWebp().then((supported) => {
+    if (supported) pageExt = 'webp';
+    render();
+  });
 });
