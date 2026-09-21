@@ -9,6 +9,7 @@
 //   node tools/convert-media.js --max-width 1600 — заодно уменьшить до 1600px
 //   node tools/convert-media.js --keep-names     — не приводить имена к web-виду
 //   node tools/convert-media.js --crf 40         — сильнее/слабее жать видео
+//   node tools/convert-media.js --mute          — выкинуть звук (для фоновых видео)
 //   node tools/convert-media.js <входная> <выходная> — другие папки
 //
 // Нужен ffmpeg в системе (проверка при запуске).
@@ -31,11 +32,12 @@ const OPUS_BITRATE = '128k';
 const repoRoot = path.join(__dirname, '..');
 
 function parseArgs(argv) {
-  const opts = { force: false, maxWidth: 0, keepNames: false, crf: DEFAULT_VP9_CRF, dirs: [] };
+  const opts = { force: false, maxWidth: 0, keepNames: false, mute: false, crf: DEFAULT_VP9_CRF, dirs: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--force') opts.force = true;
     else if (arg === '--keep-names') opts.keepNames = true;
+    else if (arg === '--mute') opts.mute = true;
     else if (arg === '--max-width') {
       opts.maxWidth = Number(argv[i + 1]);
       i += 1;
@@ -102,15 +104,18 @@ function convertImage(src, dest, maxWidth) {
   runFfmpeg(args);
 }
 
-function convertVideo(src, dest, maxWidth, crf) {
+function convertVideo(src, dest, maxWidth, crf, mute) {
   const args = ['-y', '-i', src];
   if (maxWidth) args.push('-vf', `scale='min(iw,${maxWidth})':-2`);
   args.push(
     '-c:v', 'libvpx-vp9', '-crf', String(crf), '-b:v', '0',
-    '-row-mt', '1', '-cpu-used', '2', '-pix_fmt', 'yuv420p',
-    '-c:a', 'libopus', '-b:a', OPUS_BITRATE,
-    dest
+    '-row-mt', '1', '-cpu-used', '2', '-pix_fmt', 'yuv420p'
   );
+  // Фоновые видео на сайте всё равно играют без звука — дорожка только
+  // добавляет вес.
+  if (mute) args.push('-an');
+  else args.push('-c:a', 'libopus', '-b:a', OPUS_BITRATE);
+  args.push(dest);
   runFfmpeg(args);
 }
 
@@ -168,7 +173,7 @@ function main() {
     process.stdout.write(`… ${rel} → ${path.relative(opts.outDir, dest)}`);
     try {
       if (isImage) convertImage(src, dest, opts.maxWidth);
-      else convertVideo(src, dest, opts.maxWidth, opts.crf);
+      else convertVideo(src, dest, opts.maxWidth, opts.crf, opts.mute);
     } catch (err) {
       console.log('  ОШИБКА');
       problems.push(`${rel}: ${err.message}`);
