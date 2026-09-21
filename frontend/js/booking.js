@@ -165,18 +165,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitEl = formEl.querySelector('button[type="submit"]');
 
     if (isTicketedEvent()) {
-      // Стульев нужно выбрать ровно по числу гостей: каждый стул — билет.
+      // Каждый стул — отдельный билет: мест берут по числу гостей, а для
+      // компании «5+» — не меньше пяти и сколько нужно.
+      const openEnded = isOpenEndedParty();
+      const hint = (text) => `<br><span style="color:var(--text-muted);font-size:0.85rem;">${text}</span>`;
+
       if (!partySize) {
         summaryEl.innerHTML = 'Сначала выберите количество гостей';
       } else if (count === 0) {
-        summaryEl.innerHTML = `Выберите на схеме места: нужно <strong>${partySize}</strong>`;
-      } else if (count < partySize) {
-        summaryEl.innerHTML = `Выбрано мест: <strong>${count}</strong> из ${partySize} · Сумма: <strong>${total} ₺</strong>`;
+        summaryEl.innerHTML = openEnded
+          ? `Выберите на схеме места: минимум <strong>${partySize}</strong>`
+          : `Выберите на схеме места: нужно <strong>${partySize}</strong>`;
       } else {
-        summaryEl.innerHTML = `Выбрано мест: <strong>${count}</strong> из ${partySize} · Сумма: <strong>${total} ₺</strong><br>`
-          + '<span style="color:var(--text-muted);font-size:0.85rem;">Чтобы поменять место, снимите выбор с уже выбранного</span>';
+        const sum = `Выбрано мест: <strong>${count}</strong> · Сумма: <strong>${total} ₺</strong>`;
+        if (count < partySize) {
+          summaryEl.innerHTML = sum + hint(`Нужно ещё ${partySize - count}`);
+        } else if (openEnded) {
+          summaryEl.innerHTML = sum + hint('Можно добавить ещё места, если компания больше');
+        } else {
+          summaryEl.innerHTML = sum + hint('Чтобы поменять место, снимите выбор с уже выбранного');
+        }
       }
-      submitEl.disabled = count !== partySize;
+      submitEl.disabled = openEnded ? count < partySize : count !== partySize;
       return;
     }
 
@@ -202,8 +212,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         selected.delete(id);
       } else {
         if (seat.status !== 'free') return;
-        // Больше мест, чем гостей, не продаём — сначала снять лишнее.
-        if (selected.size >= partySize) return;
+        // Для компании точного размера больше мест, чем гостей, не
+        // продаём — сначала нужно снять лишнее. Для «5+» потолка нет.
+        if (!isOpenEndedParty() && selected.size >= partySize) return;
         selected.add(id);
       }
       renderSeats();
@@ -235,6 +246,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // столик целиком: столы на схеме остаются, но выбираются стулья вокруг
   // них — ровно столько, сколько гостей.
   const isTicketedEvent = () => event && event.price > 0;
+  // Верхняя кнопка выбора компании — «5+», то есть пять и сколько угодно
+  // больше. Для неё число мест не ограничиваем сверху, оно лишь минимум.
+  const OPEN_ENDED_PARTY_SIZE = 5;
+  const isOpenEndedParty = () => partySize >= OPEN_ENDED_PARTY_SIZE;
   // Платное мероприятие, у которого в админке указана внешняя страница
   // оплаты: вместо своей (тестовой) оплаты отправляем гостя туда.
   const externalPaymentUrl = () => (event && event.price > 0 && event.payment_url) || '';
@@ -354,7 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         name,
         email,
         arrivalTime,
-        partySize,
+        partySize: isTicketedEvent() ? selected.size : partySize,
       });
       if (isFreeEvent() && result.telegramUrl) {
         window.open(result.telegramUrl, '_blank', 'noopener');
