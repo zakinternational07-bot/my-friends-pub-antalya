@@ -73,28 +73,148 @@ document.addEventListener('DOMContentLoaded', async () => {
     return 'free';
   }
 
-  // Платное мероприятие: столы рисуем как раньше, но они только фон —
-  // кликаются отдельные стулья вокруг них.
-  function renderChairs() {
-    // Барные места — это «столы» из одного места, и квадрат стола рисуется
-    // ровно под кружком самого места. Для одиночных мест квадрат не нужен:
-    // достаточно кружка, который и есть посадочное место.
-    const tables = tableUnits().filter((unit) => unit.seatIds.length > 1)
-      .map((unit) => `<div class="table-unit table-unit-static"
-        style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
-        title="${unit.title}"></div>`).join('');
-
-    const chairs = seats.map((seat) => {
-      const isSelected = selected.has(seat.id);
-      return `<div class="seat${isSelected ? ' selected' : ''}"
-        data-id="${seat.id}"
-        data-status="${isSelected ? 'free' : seat.status}"
-        style="left:${seat.pos_x}%; top:${seat.pos_y}%;"
-        title="${seatLabel(seat)}"></div>`;
-    }).join('');
-
-    seatsLayerEl.innerHTML = tables + chairs;
+  function unitSeatsOf(unit) {
+    return unit.seatIds.map((id) => seats.find((s) => s.id === id)).filter(Boolean);
   }
+
+  // Можно ли добавить ещё одно место: для компании точного размера — пока
+  // не набрали по числу гостей, для «5+» — без ограничения сверху.
+  function canSelectMore() {
+    return isOpenEndedParty() || selected.size < partySize;
+  }
+
+  function chairHtml(seat, extraClass) {
+    const isSelected = selected.has(seat.id);
+    return `<div class="seat${isSelected ? ' selected' : ''}${extraClass ? ' ' + extraClass : ''}"
+      data-id="${seat.id}"
+      data-status="${isSelected ? 'free' : seat.status}"
+      title="${escapeHtml(seatLabel(seat))}"`;
+  }
+
+  // Платное мероприятие: на схеме только столы — на телефоне отдельные
+  // стулья стоят слишком кучно, чтобы попадать по ним пальцем. Стулья
+  // выбираются в отдельном окне стола (см. openTableModal). Барные места
+  // — «столы» из одного места, их выбирают прямо на схеме.
+  function renderChairs() {
+    seatsLayerEl.innerHTML = tableUnits().map((unit) => {
+      const unitSeats = unitSeatsOf(unit);
+
+      if (unitSeats.length === 1) {
+        const seat = unitSeats[0];
+        return `${chairHtml(seat)} style="left:${seat.pos_x}%; top:${seat.pos_y}%;"></div>`;
+      }
+
+      const selectedHere = unitSeats.filter((s) => selected.has(s.id)).length;
+      const freeHere = unitSeats.filter((s) => s.status === 'free' && !selected.has(s.id)).length;
+      // Стол доступен, пока за ним есть хоть одно свободное место.
+      const status = (freeHere + selectedHere) === 0 ? 'taken' : 'free';
+      // Цифра в квадрате: сколько мест уже выбрано за этим столом, а пока
+      // не выбрано ничего — сколько свободно.
+      const badge = selectedHere > 0 ? selectedHere : freeHere;
+
+      return `<div class="table-unit table-unit-pick${selectedHere ? ' selected' : ''}"
+        data-label="${escapeHtml(unit.table_label)}"
+        data-status="${status}"
+        style="left:${unit.pos_x}%; top:${unit.pos_y}%;"
+        title="${escapeHtml(unit.title)}">${badge}</div>`;
+    }).join('');
+  }
+
+  // ── Окно отдельного стола (только для платных мероприятий) ──────────
+  // На схеме зала стулья стоят слишком тесно для пальца, поэтому места
+  // выбираются здесь: стол крупно, вокруг него его же стулья в том же
+  // расположении, что и на плане.
+  const tableModal = document.createElement('div');
+  tableModal.className = 'table-modal';
+  tableModal.hidden = true;
+  tableModal.innerHTML = `
+    <div class="table-modal-card" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
+      <button type="button" class="table-modal-close" aria-label="Закрыть">×</button>
+      <h3 class="table-modal-title" id="table-modal-title"></h3>
+      <p class="table-modal-counter"></p>
+      <div class="table-modal-plan"></div>
+      <button type="button" class="btn btn-block table-modal-done">Готово</button>
+    </div>
+  `;
+  document.body.appendChild(tableModal);
+
+  const modalTitleEl = tableModal.querySelector('.table-modal-title');
+  const modalCounterEl = tableModal.querySelector('.table-modal-counter');
+  const modalPlanEl = tableModal.querySelector('.table-modal-plan');
+  let openTableLabel = null;
+
+  function toggleSeat(id) {
+    const seat = seats.find((s) => s.id === id);
+    if (!seat) return;
+    if (selected.has(id)) {
+      selected.delete(id);
+    } else {
+      if (seat.status !== 'free') return;
+      if (!canSelectMore()) return;
+      selected.add(id);
+    }
+    renderSeats();
+    renderSummary();
+    if (!tableModal.hidden) renderTableModal();
+  }
+
+  function renderTableModal() {
+    const unit = tableUnits().find((u) => u.table_label === openTableLabel);
+    if (!unit) return closeTableModal();
+
+    const unitSeats = unitSeatsOf(unit);
+    const selectedHere = unitSeats.filter((s) => selected.has(s.id)).length;
+
+    modalTitleEl.textContent = unit.table_label;
+    modalCounterEl.textContent = isOpenEndedParty()
+      ? `Выбрано за этим столом: ${selectedHere} · всего мест выбрано: ${selected.size}`
+      : `Выбрано за этим столом: ${selectedHere} · всего: ${selected.size} из ${partySize}`;
+
+    // Схема зала вытянута по ширине (4:3), поэтому одинаковые «проценты»
+    // по горизонтали дают больше пикселей, чем по вертикали. Чтобы стулья
+    // в окне стояли вокруг стола так же, как на плане, пересчитываем.
+    const MAP_ASPECT = 4 / 3;
+    const offsets = unitSeats.map((seat) => ({
+      seat,
+      dx: (seat.pos_x - unit.pos_x) * MAP_ASPECT,
+      dy: seat.pos_y - unit.pos_y,
+    }));
+    const maxOffset = Math.max(...offsets.map((o) => Math.max(Math.abs(o.dx), Math.abs(o.dy)))) || 1;
+    const scale = 36 / maxOffset; // стулья на 36% от центра — с запасом до краёв
+
+    modalPlanEl.innerHTML = `<div class="table-modal-table">${escapeHtml(unit.table_label)}</div>`
+      + offsets.map((o) => `${chairHtml(o.seat)}
+          style="left:${50 + o.dx * scale}%; top:${50 + o.dy * scale}%;"></div>`).join('');
+  }
+
+  function openTableModal(label) {
+    openTableLabel = label;
+    tableModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    renderTableModal();
+  }
+
+  function closeTableModal() {
+    tableModal.hidden = true;
+    openTableLabel = null;
+    document.body.style.overflow = '';
+  }
+
+  tableModal.addEventListener('click', (e) => {
+    // Тап по затемнённому фону вне карточки тоже закрывает окно.
+    if (e.target === tableModal
+        || e.target.closest('.table-modal-close')
+        || e.target.closest('.table-modal-done')) {
+      closeTableModal();
+      return;
+    }
+    const chairEl = e.target.closest('.seat');
+    if (chairEl) toggleSeat(Number(chairEl.dataset.id));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !tableModal.hidden) closeTableModal();
+  });
 
   function renderSeats() {
     if (isTicketedEvent()) {
@@ -144,6 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function selectPartySize(size) {
     partySize = size;
     selected.clear();
+    if (!tableModal.hidden) closeTableModal();
     mapEl.classList.remove('hall-map-locked');
     [...partySizeOptionsEl.children].forEach((btn) => {
       btn.classList.toggle('active', Number(btn.dataset.size) === size);
@@ -203,22 +324,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!partySize) return;
 
     if (isTicketedEvent()) {
+      const tableEl = e.target.closest('.table-unit-pick');
+      if (tableEl) {
+        openTableModal(tableEl.dataset.label);
+        return;
+      }
       const chairEl = e.target.closest('.seat');
       if (!chairEl) return;
-      const id = Number(chairEl.dataset.id);
-      const seat = seats.find((s) => s.id === id);
-      if (!seat) return;
-      if (selected.has(id)) {
-        selected.delete(id);
-      } else {
-        if (seat.status !== 'free') return;
-        // Для компании точного размера больше мест, чем гостей, не
-        // продаём — сначала нужно снять лишнее. Для «5+» потолка нет.
-        if (!isOpenEndedParty() && selected.size >= partySize) return;
-        selected.add(id);
-      }
-      renderSeats();
-      renderSummary();
+      toggleSeat(Number(chairEl.dataset.id));
       return;
     }
 
@@ -308,6 +421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           renderSeats();
           renderSummary();
           updateWaitlistVisibility();
+          if (!tableModal.hidden) renderTableModal();
         }
       } catch (e) { /* ignore */ }
     });
