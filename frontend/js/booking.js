@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // гостей вообще нет свободных столиков — самой брони гость всё равно
   // оформить не может, дальше показывать пустую форму бессмысленно.
   function updateWaitlistVisibility() {
+    if (isFreeEvent()) return;
     if (!partySize) {
       waitlistCardEl.style.display = 'none';
       formEl.style.display = '';
@@ -281,6 +282,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function renderSummary() {
+    // На бесплатных мероприятиях мест не выбирают: сводка не нужна, а
+    // кнопку трогать нельзя — она активна с самого начала.
+    if (isFreeEvent()) return;
+
     const count = selected.size;
     const total = event ? event.price * count : 0;
     const submitEl = formEl.querySelector('button[type="submit"]');
@@ -453,10 +458,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     ws.addEventListener('close', () => setTimeout(connectWs, 3000));
   }
-  connectWs();
-
-  // Фолбэк на случай проблем с WebSocket (например, нестабильный wifi заведения).
-  setInterval(loadSeats, 15000);
+  // Живое обновление занятости нужно только там, где выбирают места.
+  if (!isFreeEvent()) {
+    connectWs();
+    // Фолбэк на случай проблем с WebSocket (например, нестабильный wifi заведения).
+    setInterval(loadSeats, 15000);
+  }
 
   waitlistSubmitBtn.addEventListener('click', async () => {
     waitlistErrorEl.textContent = '';
