@@ -72,7 +72,11 @@ CREATE TABLE IF NOT EXISTS bookings (
   -- Проверка явки после начала мероприятия (см. reminderScheduler.js):
   -- «Вы уже здесь?» с двумя кнопками, снимаем бронь, если 15 минут тишины.
   arrival_check_sent_at TEXT,
-  arrival_confirmed_at TEXT
+  arrival_confirmed_at TEXT,
+  -- Бесплатные мероприятия бронируются без выбора мест: вместо схемы зала
+  -- гость оставляет телефон для связи и пожелания (см. booking.js).
+  customer_phone TEXT,
+  guest_wishes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS booking_seats (

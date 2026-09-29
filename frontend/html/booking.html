@@ -79,6 +79,18 @@
         <label for="email">Email (на него придёт билет)</label>
         <input type="email" id="email" name="email" required />
       </div>
+      <div class="form-field" id="guests-field" style="display:none;">
+        <label for="guests">Сколько человек придёт?</label>
+        <input type="number" id="guests" name="guests" min="1" max="50" step="1" value="2" />
+      </div>
+      <div class="form-field" id="phone-field" style="display:none;">
+        <label for="phone">Телефон для связи (Telegram / WhatsApp)</label>
+        <input type="tel" id="phone" name="phone" placeholder="+90 5XX XXX XX XX" />
+      </div>
+      <div class="form-field" id="wishes-field" style="display:none;">
+        <label for="wishes">Пожелания (необязательно)</label>
+        <textarea id="wishes" name="wishes" rows="3" maxlength="500" placeholder="День рождения, столик у окна, детский стул..."></textarea>
+      </div>
       <div class="form-field">
         <label for="arrival_time">Во сколько подойдёте?</label>
         <input type="time" id="arrival_time" name="arrival_time" required />

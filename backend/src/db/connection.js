@@ -32,6 +32,8 @@ const migrations = {
   party_size: 'ALTER TABLE bookings ADD COLUMN party_size INTEGER',
   arrival_check_sent_at: 'ALTER TABLE bookings ADD COLUMN arrival_check_sent_at TEXT',
   arrival_confirmed_at: 'ALTER TABLE bookings ADD COLUMN arrival_confirmed_at TEXT',
+  customer_phone: 'ALTER TABLE bookings ADD COLUMN customer_phone TEXT',
+  guest_wishes: 'ALTER TABLE bookings ADD COLUMN guest_wishes TEXT',
 };
 for (const [column, sql] of Object.entries(migrations)) {
   if (!bookingColumns.includes(column)) db.exec(sql);

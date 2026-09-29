@@ -371,8 +371,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const arrivalHint = document.getElementById('arrival-hint');
   arrivalHint.textContent = 'Место держится ещё 15 минут после этого времени.';
 
+  const nameInput = document.getElementById('name');
   const emailField = document.getElementById('email-field');
   const emailInput = document.getElementById('email');
+  const guestsField = document.getElementById('guests-field');
+  const guestsInput = document.getElementById('guests');
+  const phoneField = document.getElementById('phone-field');
+  const phoneInput = document.getElementById('phone');
+  const wishesField = document.getElementById('wishes-field');
+  const wishesInput = document.getElementById('wishes');
 
   try {
     event = await Api.get(`/api/events/${eventId}`);
@@ -381,12 +388,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isFreeEvent()) {
       submitBtn.textContent = 'Подтвердить бронь в Telegram ✈';
       submitBtn.classList.add('btn-telegram');
+      submitBtn.disabled = false;
       const banner = document.getElementById('test-mode-banner');
       if (banner) banner.style.display = 'none';
-      // Билет на почту не шлём для бесплатных мероприятий — подтверждение
-      // и так приходит в Telegram-бот, почта тут не нужна.
+      // Бесплатные мероприятия бронируются без схемы зала: столик подбирает
+      // персонал, а от гостя нужны только время, число людей, имя, телефон
+      // и пожелания.
+      document.querySelector('h1').textContent = 'Бронь столика';
+      ['party-size-card', 'hall-map', 'booking-summary', 'waitlist-card'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      const legend = document.querySelector('.hall-legend');
+      if (legend) legend.style.display = 'none';
+
       emailField.style.display = 'none';
       emailInput.required = false;
+      guestsField.style.display = '';
+      guestsInput.required = true;
+      phoneField.style.display = '';
+      phoneInput.required = true;
+      wishesField.style.display = '';
     } else if (externalPaymentUrl()) {
       // Билет и письмо выдаёт внешний сайт оплаты, тестовая оплата тут ни при чём.
       const banner = document.getElementById('test-mode-banner');
@@ -394,8 +416,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       emailField.style.display = 'none';
       emailInput.required = false;
     }
-    await loadSeats();
-    renderSummary();
+    // Схему зала грузим только там, где по ней выбирают места: на
+    // бесплатных мероприятиях её нет вовсе.
+    if (!isFreeEvent()) {
+      await loadSeats();
+      renderSummary();
+    }
   } catch (err) {
     mapEl.innerHTML = `<p class="form-error">${escapeHtml(err.message)}</p>`;
     return;
@@ -460,7 +486,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
     errorEl.textContent = '';
     errorEl.className = '';
-    if (selected.size === 0) return;
+    // На бесплатных мероприятиях мест не выбирают — там бронь оформляется
+    // по форме, столик подбирает персонал.
+    if (!isFreeEvent() && selected.size === 0) return;
     const paymentUrl = externalPaymentUrl();
     if (paymentUrl) {
       // window.open — строго до любого await, иначе браузер посчитает
@@ -472,18 +500,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
       return;
     }
-    const name = formEl.name.value.trim();
-    const email = isFreeEvent() ? '' : formEl.email.value.trim();
+    const name = nameInput.value.trim();
+    const email = isFreeEvent() ? '' : emailInput.value.trim();
     const arrivalTime = arrivalInput.value;
     submitBtn.disabled = true;
     try {
       const result = await Api.post('/api/bookings', {
         eventId: Number(eventId),
-        seatIds: [...selected],
+        seatIds: isFreeEvent() ? [] : [...selected],
         name,
         email,
         arrivalTime,
-        partySize: isTicketedEvent() ? selected.size : partySize,
+        partySize: isFreeEvent() ? Number(guestsInput.value) : (isTicketedEvent() ? selected.size : partySize),
+        phone: isFreeEvent() ? phoneInput.value.trim() : '',
+        wishes: isFreeEvent() ? wishesInput.value.trim() : '',
       });
       if (isFreeEvent() && result.telegramUrl) {
         window.open(result.telegramUrl, '_blank', 'noopener');
@@ -498,8 +528,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       errorEl.textContent = err.message;
       errorEl.className = 'form-error';
       submitBtn.disabled = false;
-      await loadSeats();
-      renderSummary();
+      if (!isFreeEvent()) {
+        await loadSeats();
+        renderSummary();
+      }
     }
   });
 });

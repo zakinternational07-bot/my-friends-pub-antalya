@@ -93,17 +93,42 @@ router.post('/webhook', async (req, res) => {
     const partySizeLine = booking.party_size
       ? `👥 Количество гостей: <b>${telegram.stylizeDigits(booking.party_size)}</b>\n`
       : '';
+    // На бесплатных мероприятиях места не выбирают — столик подбирает
+    // персонал, поэтому строки про места в подтверждении просто нет.
+    const seatsLine = seatLabels ? `💺 ${seatLabels}\n` : '';
+    const wishesLine = booking.guest_wishes
+      ? `📝 Пожелания: ${booking.guest_wishes}\n`
+      : '';
 
     await telegram.sendMessage(chatId,
       `Здравствуйте, ${booking.customer_name}! 👋\n\n` +
       `Ваша бронь на «<b>${event.title}</b>» принята.\n` +
       `📅 ${event.event_date} в <b>${telegram.stylizeDigits(event.event_time)}</b>\n` +
-      `💺 ${seatLabels}\n` +
+      seatsLine +
       partySizeLine +
       arrivalLine +
+      wishesLine +
       graceLine +
       `\nВ день мероприятия пришлём сюда же напоминание — нужно будет подтвердить, что вы придёте, одним нажатием.`
     );
+
+    // Бронь сразу уходит в рабочий чат: персоналу нужно знать, кого и во
+    // сколько ждать и по какому телефону связаться.
+    const staffChatId = process.env.TELEGRAM_STAFF_CHAT_ID;
+    if (staffChatId) {
+      await telegram.sendMessage(staffChatId,
+        '#бронь\n'
+        + `🎫 «<b>${event.title}</b>», ${event.event_date} ${event.event_time}\n`
+        + `👤 ${booking.customer_name}\n`
+        + (booking.customer_phone ? `📞 ${booking.customer_phone}\n` : '')
+        + (username ? `✈️ @${username}\n` : '')
+        + (booking.party_size ? `👥 Гостей: ${booking.party_size}\n` : '')
+        + (booking.arrival_time ? `🕒 Придут к ${booking.arrival_time}\n` : '')
+        + seatsLine
+        + wishesLine
+        + `№ ${booking.booking_ref}`
+      );
+    }
 
     broadcastSeatUpdate(booking.event_id);
   } catch (err) {

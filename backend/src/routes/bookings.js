@@ -9,10 +9,10 @@ const telegram = require('../services/telegram');
 const router = express.Router();
 
 router.post('/', (req, res) => {
-  const { eventId, seatIds, name, email, arrivalTime, partySize } = req.body || {};
+  const { eventId, seatIds, name, email, arrivalTime, partySize, phone, wishes } = req.body || {};
 
-  if (!eventId || !Array.isArray(seatIds) || seatIds.length === 0 || !name || !arrivalTime || !partySize) {
-    return res.status(400).json({ error: 'Заполните имя, время прихода, количество гостей и выберите хотя бы одно место' });
+  if (!eventId || !name || !arrivalTime || !partySize) {
+    return res.status(400).json({ error: 'Заполните имя, время прихода и количество гостей' });
   }
   if (!/^\d{2}:\d{2}$/.test(arrivalTime)) {
     return res.status(400).json({ error: 'Некорректное время прихода' });
@@ -24,65 +24,82 @@ router.post('/', (req, res) => {
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
   if (!event) return res.status(404).json({ error: 'Мероприятие не найдено' });
 
-  // Билет на почту шлём только за платные брони — на бесплатных подтверждение
-  // приходит в Telegram-бот, почта там не нужна и не запрашивается на сайте.
+  // Бесплатные мероприятия бронируются без схемы зала: гость оставляет
+  // телефон и пожелания, а конкретный столик подбирает персонал. Платные
+  // — как раньше: выбор мест на схеме, билет на почту.
   const isFree = event.price === 0;
-  if (!isFree) {
+  const customerPhone = String(phone || '').trim();
+  const guestWishes = String(wishes || '').trim().slice(0, 500);
+
+  if (isFree) {
+    // Телефон — единственный способ связаться, если гость не дойдёт до бота.
+    if (customerPhone.replace(/\D/g, '').length < 10) {
+      return res.status(400).json({ error: 'Укажите телефон для связи' });
+    }
+  } else {
+    if (!Array.isArray(seatIds) || seatIds.length === 0) {
+      return res.status(400).json({ error: 'Выберите хотя бы одно место' });
+    }
     if (!email) return res.status(400).json({ error: 'Заполните email' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Некорректный email' });
     }
   }
   const customerEmail = isFree ? '' : email;
+  const bookedSeatIds = isFree ? [] : seatIds;
 
   // На платных мероприятиях каждое место — отдельный билет, поэтому число
   // мест и число гостей — это одно и то же число (сайт так и присылает:
   // сколько стульев выбрали, столько и гостей, в том числе для компании
   // «5+»). На бесплатных столик бронируется целиком, и мест в нём обычно
   // больше, чем гостей, — там это правило не применяем.
-  if (event.price > 0 && seatIds.length !== Number(partySize)) {
+  if (event.price > 0 && bookedSeatIds.length !== Number(partySize)) {
     return res.status(400).json({
       error: `Выберите ${partySize} ${Number(partySize) === 1 ? 'место' : 'мест'} — по одному на каждого гостя`,
     });
   }
 
-  const validSeats = db.prepare(
-    `SELECT id FROM hall_seats WHERE id IN (${seatIds.map(() => '?').join(',')})`
-  ).all(...seatIds);
-  if (validSeats.length !== seatIds.length) {
-    return res.status(400).json({ error: 'Некоторые места не найдены' });
+  if (bookedSeatIds.length) {
+    const validSeats = db.prepare(
+      `SELECT id FROM hall_seats WHERE id IN (${bookedSeatIds.map(() => '?').join(',')})`
+    ).all(...bookedSeatIds);
+    if (validSeats.length !== bookedSeatIds.length) {
+      return res.status(400).json({ error: 'Некоторые места не найдены' });
+    }
   }
 
   try {
     const result = db.transaction(() => {
       const nowIso = new Date().toISOString();
-      const taken = db.prepare(`
-        SELECT bs.seat_id as seat_id
-        FROM booking_seats bs
-        JOIN bookings b ON b.id = bs.booking_id
-        WHERE bs.event_id = ? AND bs.seat_id IN (${seatIds.map(() => '?').join(',')})
-          AND (b.status = 'paid' OR (b.status = 'held' AND b.hold_expires_at > ?))
-      `).all(eventId, ...seatIds, nowIso);
+      if (bookedSeatIds.length) {
+        const taken = db.prepare(`
+          SELECT bs.seat_id as seat_id
+          FROM booking_seats bs
+          JOIN bookings b ON b.id = bs.booking_id
+          WHERE bs.event_id = ? AND bs.seat_id IN (${bookedSeatIds.map(() => '?').join(',')})
+            AND (b.status = 'paid' OR (b.status = 'held' AND b.hold_expires_at > ?))
+        `).all(eventId, ...bookedSeatIds, nowIso);
 
-      if (taken.length > 0) {
-        const err = new Error('SEATS_TAKEN');
-        throw err;
+        if (taken.length > 0) {
+          const err = new Error('SEATS_TAKEN');
+          throw err;
+        }
       }
 
       const bookingRef = generateBookingRef();
       const holdExpiresAt = computeHoldExpiryIso();
-      const totalPrice = event.price * seatIds.length;
+      const totalPrice = event.price * bookedSeatIds.length;
       const telegramLinkToken = crypto.randomBytes(16).toString('hex');
 
       const bookingInfo = db.prepare(`
-        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token, arrival_time, party_size)
-        VALUES (?, ?, ?, ?, 'held', ?, ?, ?, ?, ?)
-      `).run(eventId, bookingRef, name, customerEmail, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime, Number(partySize));
+        INSERT INTO bookings (event_id, booking_ref, customer_name, customer_email, status, total_price, hold_expires_at, telegram_link_token, arrival_time, party_size, customer_phone, guest_wishes)
+        VALUES (?, ?, ?, ?, 'held', ?, ?, ?, ?, ?, ?, ?)
+      `).run(eventId, bookingRef, name, customerEmail, totalPrice, holdExpiresAt, telegramLinkToken, arrivalTime, Number(partySize), customerPhone, guestWishes);
 
       const insertSeat = db.prepare(
         'INSERT INTO booking_seats (booking_id, seat_id, event_id) VALUES (?, ?, ?)'
       );
-      seatIds.forEach((seatId) => insertSeat.run(bookingInfo.lastInsertRowid, seatId, eventId));
+      bookedSeatIds.forEach((seatId) => insertSeat.run(bookingInfo.lastInsertRowid, seatId, eventId));
 
       return { bookingRef, holdExpiresAt, totalPrice, telegramLinkToken };
     })();
