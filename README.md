@@ -125,7 +125,7 @@ TELEGRAM_STAFF_CHAT_ID=      # необязательно — куда слат�
 REMINDER_HOURS_BEFORE=12         # первое напоминание
 REMINDER_SECOND_HOURS_BEFORE=6   # повтор
 REMINDER_CANCEL_HOURS_BEFORE=3   # автоотмена, если всё ещё нет ответа
-ARRIVAL_CHECK_GRACE_MINUTES=60   # сколько ждать ответа на "Вы уже здесь?" после начала мероприятия
+ARRIVAL_CHECK_GRACE_MINUTES=30   # сколько ждать ответа на "Вы уже здесь?" после начала мероприятия
 PUBLIC_BASE_URL=...          # на Render не нужен — берётся из RENDER_EXTERNAL_URL сам
 ```
 

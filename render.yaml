@@ -40,6 +40,6 @@ services:
       - key: REMINDER_RECHECK_HOURS_BEFORE
         value: "4"
       - key: ARRIVAL_CHECK_GRACE_MINUTES
-        value: "60"
+        value: "30"
       - key: SURVEY_HOURS_AFTER_EVENT
         value: "18"

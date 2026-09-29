@@ -25,7 +25,7 @@ function recheckHours() {
 // Проверка явки: ровно в момент начала мероприятия спрашиваем подтверждённых
 // гостей «Вы уже здесь?» и, если тишина дольше этого времени — снимаем бронь.
 function arrivalCheckGraceMinutes() {
-  return Number(process.env.ARRIVAL_CHECK_GRACE_MINUTES || 60);
+  return Number(process.env.ARRIVAL_CHECK_GRACE_MINUTES || 30);
 }
 
 function publicBaseUrl() {
