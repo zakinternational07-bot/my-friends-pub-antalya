@@ -415,15 +415,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       phoneInput.required = true;
       wishesField.style.display = '';
     } else if (externalPaymentUrl()) {
-      // Билет и письмо выдаёт внешний сайт оплаты, тестовая оплата тут ни при чём.
+      // Билеты продаются на внешней площадке — мест у себя мы не держим,
+      // рассадку делает персонал по проданным билетам. Схему зала здесь не
+      // показываем и не грузим вовсе; страница нужна лишь как переход к
+      // оплате, если гость попал сюда по старой ссылке.
       const banner = document.getElementById('test-mode-banner');
       if (banner) banner.style.display = 'none';
-      emailField.style.display = 'none';
-      emailInput.required = false;
+      document.querySelector('main').innerHTML = `
+        <a class="back-link" href="event.html?id=${encodeURIComponent(eventId)}">← К мероприятию</a>
+        <h1>Билеты</h1>
+        <p class="tag">${escapeHtml(event.title)} — ${formatDateHuman(event.event_date)} ${escapeHtml(event.event_time)}</p>
+        <div class="card" style="padding:20px;margin-top:20px;">
+          <p style="margin:0 0 16px;">Билеты на это мероприятие продаются онлайн. Столик подберём для вас при входе по купленным билетам.</p>
+          <a class="btn btn-block" href="${escapeHtml(externalPaymentUrl())}" target="_blank" rel="noopener">Купить билеты</a>
+        </div>
+      `;
     }
-    // Схему зала грузим только там, где по ней выбирают места: на
-    // бесплатных мероприятиях её нет вовсе.
-    if (!isFreeEvent()) {
+    // Схему зала грузим только там, где по ней действительно выбирают
+    // места: не на бесплатных и не там, где билеты продаёт внешняя площадка.
+    if (!isFreeEvent() && !externalPaymentUrl()) {
       await loadSeats();
       renderSummary();
     }
@@ -459,7 +469,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ws.addEventListener('close', () => setTimeout(connectWs, 3000));
   }
   // Живое обновление занятости нужно только там, где выбирают места.
-  if (!isFreeEvent()) {
+  if (!isFreeEvent() && !externalPaymentUrl()) {
     connectWs();
     // Фолбэк на случай проблем с WebSocket (например, нестабильный wifi заведения).
     setInterval(loadSeats, 15000);

@@ -42,6 +42,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       : ev.video_url
         ? videoBlockHtml(ev.video_url, 'event-poster-video')
         : '';
+    // У платных мероприятий билеты продаются на внешней площадке (ссылку
+    // админ указывает в мероприятии): кнопка ведёт сразу туда, схему зала
+    // на сайте не показываем — места распределяет персонал по проданным
+    // билетам. Если ссылку не указали, остаётся обычная бронь на сайте.
+    function ctaHtml(event) {
+      if (event.price > 0 && event.payment_url) {
+        return `<a class="btn" href="${escapeHtml(event.payment_url)}" target="_blank" rel="noopener">Купить билеты</a>`;
+      }
+      return `<a class="btn" href="booking.html?event=${event.id}">Забронировать</a>`;
+    }
+
     const videoHtml = (ev.poster_image && ev.video_url)
       ? `<div class="event-video-wrap">${videoBlockHtml(ev.video_url, 'event-extra-video')}</div>`
       : '';
@@ -56,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <h1>${escapeHtml(ev.title)}</h1>
           <p>${escapeHtml(ev.description_long || ev.description_short)}</p>
           <p><strong>${ev.price} ₺</strong> за место</p>
-          <a class="btn" href="booking.html?event=${ev.id}">Забронировать</a>
+          ${ctaHtml(ev)}
         </div>
       </div>
       ${videoHtml}
