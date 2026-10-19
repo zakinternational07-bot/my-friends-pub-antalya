@@ -8,7 +8,6 @@ const runSeed = require('./src/db/seed');
 const eventsRouter = require('./src/routes/events');
 const menuRouter = require('./src/routes/menu');
 const bookingsRouter = require('./src/routes/bookings');
-const paymentsRouter = require('./src/routes/payments');
 const authRouter = require('./src/routes/auth');
 const adminRouter = require('./src/routes/admin');
 const telegramWebhookRouter = require('./src/routes/telegramWebhook');
@@ -40,7 +39,6 @@ app.use(session({
 app.use('/api/events', eventsRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/bookings', bookingsRouter);
-app.use('/api/payments', paymentsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/telegram', telegramWebhookRouter);
@@ -67,7 +65,6 @@ startSurveyScheduler();
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`My Friends Pub Antalya backend running on http://localhost:${PORT}`);
-  console.log('Тестовый режим: оплата и письма не настоящие (см. README).');
   const publicBaseUrl = process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL;
   if (telegram.isConfigured() && publicBaseUrl) {
     telegram.registerWebhook(publicBaseUrl);

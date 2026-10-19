@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const db = require('../db/connection');
 const { computeHoldExpiryIso } = require('../services/seatHold');
-const { generateBookingRef } = require('../services/ticket');
+const { generateBookingRef } = require('../services/bookingRef');
 const { broadcastSeatUpdate } = require('../ws/socket');
 const telegram = require('../services/telegram');
 
@@ -109,9 +109,8 @@ router.post('/', (req, res) => {
       bookingRef: result.bookingRef,
       holdExpiresAt: result.holdExpiresAt,
       totalPrice: result.totalPrice,
-      paymentUrl: `/html/payment.html?booking=${result.bookingRef}`,
-      // Для бесплатных мероприятий бронь подтверждается через Telegram, а
-      // не через (тестовую) оплату — см. фронтенд booking.js.
+      // Бронь подтверждается только через Telegram. Билеты на платные
+      // мероприятия продаёт внешняя площадка — своей оплаты у сайта нет.
       telegramUrl: isFree ? telegram.botDeepLink(result.telegramLinkToken) : null,
     });
   } catch (err) {

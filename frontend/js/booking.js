@@ -394,8 +394,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       submitBtn.textContent = 'Подтвердить бронь в Telegram ✈';
       submitBtn.classList.add('btn-telegram');
       submitBtn.disabled = false;
-      const banner = document.getElementById('test-mode-banner');
-      if (banner) banner.style.display = 'none';
       // Бесплатные мероприятия бронируются без схемы зала: столик подбирает
       // персонал, а от гостя нужны только время, число людей, имя, телефон
       // и пожелания.
@@ -414,28 +412,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       phoneField.style.display = '';
       phoneInput.required = true;
       wishesField.style.display = '';
-    } else if (externalPaymentUrl()) {
-      // Билеты продаются на внешней площадке — мест у себя мы не держим,
-      // рассадку делает персонал по проданным билетам. Схему зала здесь не
-      // показываем и не грузим вовсе; страница нужна лишь как переход к
-      // оплате, если гость попал сюда по старой ссылке.
-      const banner = document.getElementById('test-mode-banner');
-      if (banner) banner.style.display = 'none';
+    } else {
+      // Платное мероприятие. Билеты продаёт внешняя площадка, своей оплаты у
+      // сайта нет — мест мы не держим, рассадку делает персонал по купленным
+      // билетам. Схему зала здесь не показываем и не грузим вовсе.
+      const paymentUrl = externalPaymentUrl();
+      const action = paymentUrl
+        ? `<p style="margin:0 0 16px;">Билеты на это мероприятие продаются онлайн. Столик подберём для вас при входе по купленным билетам.</p>
+           <a class="btn btn-block" href="${escapeHtml(paymentUrl)}" target="_blank" rel="noopener">Купить билеты</a>`
+        // Ссылку на площадку забыли указать в админке — честно говорим об
+        // этом вместо формы, которая всё равно ни к чему не приведёт.
+        : `<p style="margin:0;">Продажа билетов на это мероприятие ещё не открыта. Загляните позже или напишите нам — подскажем, как попасть.</p>`;
       document.querySelector('main').innerHTML = `
         <a class="back-link" href="event.html?id=${encodeURIComponent(eventId)}">← К мероприятию</a>
         <h1>Билеты</h1>
         <p class="tag">${escapeHtml(event.title)} — ${formatDateHuman(event.event_date)} ${escapeHtml(event.event_time)}</p>
-        <div class="card" style="padding:20px;margin-top:20px;">
-          <p style="margin:0 0 16px;">Билеты на это мероприятие продаются онлайн. Столик подберём для вас при входе по купленным билетам.</p>
-          <a class="btn btn-block" href="${escapeHtml(externalPaymentUrl())}" target="_blank" rel="noopener">Купить билеты</a>
-        </div>
+        <div class="card" style="padding:20px;margin-top:20px;">${action}</div>
       `;
-    }
-    // Схему зала грузим только там, где по ней действительно выбирают
-    // места: не на бесплатных и не там, где билеты продаёт внешняя площадка.
-    if (!isFreeEvent() && !externalPaymentUrl()) {
-      await loadSeats();
-      renderSummary();
+      return;
     }
   } catch (err) {
     mapEl.innerHTML = `<p class="form-error">${escapeHtml(err.message)}</p>`;
@@ -468,8 +462,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     ws.addEventListener('close', () => setTimeout(connectWs, 3000));
   }
-  // Живое обновление занятости нужно только там, где выбирают места.
-  if (!isFreeEvent() && !externalPaymentUrl()) {
+  // Живое обновление занятости нужно только там, где выбирают места. Гости
+  // сейчас мест не выбирают нигде (бесплатные — по форме, платные — на
+  // внешней площадке), так что ветка не срабатывает; схема зала осталась в
+  // коде на случай собственной продажи мест и используется в админке.
+  if (!isFreeEvent()) {
     connectWs();
     // Фолбэк на случай проблем с WebSocket (например, нестабильный wifi заведения).
     setInterval(loadSeats, 15000);
@@ -503,43 +500,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
     errorEl.textContent = '';
     errorEl.className = '';
-    // На бесплатных мероприятиях мест не выбирают — там бронь оформляется
-    // по форме, столик подбирает персонал.
-    if (!isFreeEvent() && selected.size === 0) return;
-    const paymentUrl = externalPaymentUrl();
-    if (paymentUrl) {
-      // window.open — строго до любого await, иначе браузер посчитает
-      // вкладку всплывающим окном и заблокирует её.
-      window.open(paymentUrl, '_blank', 'noopener');
-      formEl.innerHTML = `
-        <p class="form-success">Открыли страницу оплаты билетов в новой вкладке.</p>
-        <a class="btn btn-block" href="${escapeHtml(paymentUrl)}" target="_blank" rel="noopener">Открыть оплату ещё раз</a>
-      `;
-      return;
-    }
+    // Сюда доходят только бесплатные мероприятия: у платных формы нет,
+    // они целиком уходят на внешнюю продажу билетов.
     const name = nameInput.value.trim();
-    const email = isFreeEvent() ? '' : emailInput.value.trim();
+    const email = '';
     const arrivalTime = arrivalInput.value;
     submitBtn.disabled = true;
     try {
       const result = await Api.post('/api/bookings', {
         eventId: Number(eventId),
-        seatIds: isFreeEvent() ? [] : [...selected],
+        // Столик подбирает персонал, поэтому мест не передаём.
+        seatIds: [],
         name,
         email,
         arrivalTime,
-        partySize: isFreeEvent() ? Number(guestsInput.value) : (isTicketedEvent() ? selected.size : partySize),
-        phone: isFreeEvent() ? phoneInput.value.trim() : '',
-        wishes: isFreeEvent() ? wishesInput.value.trim() : '',
+        partySize: Number(guestsInput.value),
+        phone: phoneInput.value.trim(),
+        wishes: wishesInput.value.trim(),
       });
-      if (isFreeEvent() && result.telegramUrl) {
+      if (result.telegramUrl) {
         window.open(result.telegramUrl, '_blank', 'noopener');
         formEl.innerHTML = `
           <p class="form-success">Открыли Telegram в новой вкладке — нажмите там «Start», чтобы подтвердить бронь. Место удержано за вами 10 минут.</p>
           <a class="btn btn-telegram btn-block" href="${result.telegramUrl}" target="_blank" rel="noopener">Открыть Telegram ещё раз ✈</a>
         `;
       } else {
-        window.location.href = result.paymentUrl;
+        throw new Error('Не удалось открыть Telegram — попробуйте ещё раз');
       }
     } catch (err) {
       errorEl.textContent = err.message;

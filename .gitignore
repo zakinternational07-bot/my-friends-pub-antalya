@@ -12,3 +12,8 @@ cloudflared.exe
 media/source/*
 media/converted/*
 !media/**/.gitkeep
+
+# Рабочие файлы, которые лежат в корне локально и в репозиторий не идут
+*.pdf
+*.drawio.png
+меню исходники pdf/

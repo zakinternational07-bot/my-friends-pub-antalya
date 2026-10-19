@@ -19,8 +19,6 @@ services:
         value: admin
       - key: ADMIN_PASSWORD
         sync: false
-      - key: PAYMENT_PROVIDER
-        value: mock
       - key: EMAIL_PROVIDER
         value: console
       - key: SEAT_HOLD_MINUTES

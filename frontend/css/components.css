@@ -701,14 +701,6 @@ body.menu-lightbox-active { overflow: hidden; }
   padding: 18px;
 }
 
-.test-mode-banner {
-  background: var(--accent-red-dark);
-  color: var(--text-white);
-  text-align: center;
-  padding: 10px;
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
-}
 
 /* ---- Forms ---- */
 .form-field { margin-bottom: 18px; }
