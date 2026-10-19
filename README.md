@@ -1,300 +1,282 @@
 # My Friends Pub — Antalya
 
-Сайт паба в Анталии: фронтенд на чистом HTML/CSS/JS, бэкенд на Node.js/Express
-с SQLite. Брони столиков, Telegram-бот, опросы гостей и админка живут в одном
-процессе. Билеты на платные мероприятия продаются на внешней площадке — своего
-платёжного шлюза в проекте нет.
+*[Русская версия](README.ru.md)*
 
-## Быстрый старт
+Website for a pub in Antalya, Turkey. Vanilla HTML/CSS/JS front end, Node.js +
+Express back end with SQLite. Table bookings, a Telegram bot, guest surveys and
+an admin panel all run inside a single process.
+
+**Live:** https://my-friends-pub-antalya.onrender.com
+
+Tickets for paid events are sold on an external ticketing platform — the site
+has no payment gateway of its own, by design.
+
+## Quick start
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# открой .env и задай ADMIN_USERNAME / ADMIN_PASSWORD / SESSION_SECRET
+# set ADMIN_USERNAME / ADMIN_PASSWORD / SESSION_SECRET in .env
 npm run dev
 ```
 
-Сервер поднимется на `http://localhost:3000` и отдаёт и API, и фронтенд.
-Админка: `http://localhost:3000/html/admin/login.html`.
+The server listens on `http://localhost:3000` and serves both the API and the
+front end. Admin panel: `http://localhost:3000/html/admin/login.html`.
 
-> **Нужен Node.js 18.** `better-sqlite3` собирается под конкретную версию Node:
-> на Node 20+ готовый бинарник не подходит и сервер падает при старте. Если
-> переустанавливал Node — пересобери модуль под 18-й: `npm rebuild better-sqlite3`
-> из-под нужной версии.
+> **Node.js 18 required.** `better-sqlite3` ships a native binary built for a
+> specific Node version; on Node 20+ it fails to load and the server won't
+> start. After changing Node versions, rebuild it: `npm rebuild better-sqlite3`.
 
-При первом запуске создаётся `backend/data/mfp.sqlite` и наполняется: админ,
-план зала, меню на 3 языках и мероприятия.
+On first run `backend/data/mfp.sqlite` is created and seeded with an admin
+account, the hall layout, a three-language menu and sample events.
 
-## Технологии
+## Stack
 
-**Бэкенд** — Node.js + Express 4. Восемь зависимостей, больше ничего:
-`better-sqlite3` (БД), `express-session` + `bcryptjs` (вход в админку),
-`multer` (загрузка афиш), `ws` (живая занятость мест), `dotenv`, `qrcode`.
+**Back end** — Node.js + Express 4 and seven dependencies, nothing else:
+`better-sqlite3` (database), `express-session` + `bcryptjs` (admin auth),
+`multer` (poster uploads), `ws` (live seat availability), `dotenv`.
 
-**Фронтенд** — ванильный JS без сборки и без единого внешнего скрипта: ни
-React/Vue, ни webpack/vite, ни CDN. Три языка — отдельными страницами
-(`index.html` / `-en` / `-tr`).
+**Front end** — vanilla JavaScript. No build step and not a single external
+script: no React/Vue, no webpack/vite, no CDN. Three languages as separate
+pages (`index.html` / `-en` / `-tr`).
 
-**Telegram-бот** — не отдельная программа, а часть этого же сервера. Без
-библиотек вроде telegraf: прямые запросы на `api.telegram.org` через встроенный
-`fetch` ([telegram.js](backend/src/services/telegram.js)), работает по вебхуку
-`POST /api/telegram/webhook`, кнопки — обычные URL на страницы сайта, а не
-`callback_data`. Отдельного хостинга под бота не нужно.
+**Telegram bot** — not a separate program, but part of the same server. No
+library such as telegraf: plain HTTPS calls to `api.telegram.org` via the
+built-in `fetch` ([telegram.js](backend/src/services/telegram.js)), driven by a
+webhook at `POST /api/telegram/webhook`. Buttons are ordinary URLs pointing at
+site routes rather than `callback_data`, so every guest action is a GET request
+that can be logged, replayed and opened in a browser. No separate hosting for
+the bot is needed.
 
-**Расписания** — `setInterval` внутри процесса, не Cron Job. Защита от повторных
-отправок — отметки в таблице `kv_store`, а не в памяти, поэтому перезапуск
-сервера не приводит к дублям.
+**Schedulers** — plain `setInterval` inside the same process, not cron jobs.
+Duplicate sends are prevented by markers in a `kv_store` table rather than
+in-memory state, so a restart never causes double messages.
 
-## Как продаются билеты
+## How tickets are sold
 
-Своего платёжного шлюза нет и подключать его не планируется. Схема такая:
+There is no built-in payment gateway and none is planned:
 
-1. В админке у мероприятия с ценой > 0 есть поле **ссылки на оплату**
-   (`payment_url`) — туда кладётся адрес страницы мероприятия на внешней
-   площадке продажи билетов.
-2. Если ссылка указана, кнопка на карточке мероприятия превращается в
-   **«Купить билеты»** и ведёт прямо на эту площадку в новой вкладке
-   ([event-detail.js](frontend/js/event-detail.js)). Схема зала при этом не
-   показывается и даже не загружается.
-3. Мест у себя мы под такие мероприятия не держим: **рассадку делает персонал на
-   входе по купленным билетам.** Сайт о факте оплаты не знает — у площадки нет
-   ни API, ни вебхуков.
+1. In the admin panel, an event priced above zero has a **ticket link** field
+   (`payment_url`) holding the event's page on the external ticketing platform.
+2. When the link is set, the call to action becomes **"Buy tickets"** and opens
+   that platform in a new tab ([event-detail.js](frontend/js/event-detail.js)).
+3. No seats are held on our side: **staff seat guests on arrival** based on the
+   tickets they bought. The site never learns that a payment happened — the
+   platform exposes neither an API nor webhooks.
 
-Поле ссылки появляется в админке только у платных мероприятий; при цене 0 оно
-скрывается и очищается на сервере ([admin.js](backend/src/routes/admin.js)).
+If the link is missing, the booking page says ticket sales aren't open yet
+instead of showing a form that could not lead anywhere.
 
-> **Ссылку нужно заполнять всегда.** Если у платного мероприятия её не указать,
-> сайт свалится в старый путь: схему зала с выбором стульев и внутреннюю
-> страницу оплаты, которая денег не принимает. Этот путь больше не используется
-> и подлежит удалению (см. «Что осталось в коде»).
+## Bookings
 
-## Бронирование
+### Free events
 
-### Бесплатные мероприятия (цена 0)
+No hall map — staff assign the table. The guest fills in a form: arrival time,
+party size, name, phone (Telegram/WhatsApp) and any requests. No email is asked
+for. A held booking is created without seats (10 minutes to confirm,
+`SEAT_HOLD_MINUTES`) and the guest is sent to `t.me/<bot>?start=<token>`.
 
-Схемы зала нет — столик подбирает персонал. Гость заполняет форму: время
-прихода, число гостей, имя, телефон (Telegram/WhatsApp) и пожелания. Email не
-спрашивается. Создаётся held-бронь без мест (10 минут на подтверждение,
-`SEAT_HOLD_MINUTES`), и гостя переносит в `t.me/<бот>?start=<токен>`.
+The guest presses Start, the bot resolves the booking by its token, marks it
+`paid` and replies with the details. At the same time the whole booking — name,
+phone, @username, party size, arrival time, requests — is posted to the staff
+chat tagged `#бронь`.
 
-Гость жмёт Start → бот находит бронь по токену, помечает `status = 'paid'` и
-присылает подтверждение с деталями. Одновременно вся бронь (имя, телефон,
-@username, число гостей, время, пожелания) уходит в рабочий чат персонала под
-тегом `#бронь`.
+### Paid events
 
-### Платные мероприятия
+Handled entirely by the external platform, see above. There is no booking flow
+for them on the site.
 
-С заполненной ссылкой — см. раздел выше, бронирования на сайте нет вообще.
-Без ссылки — выбор **стульев** (не столиков целиком) на схеме зала, живое
-обновление занятости через WebSocket `/ws` с поллингом раз в 15 сек как
-фолбэком, защита от двойного бронирования на уровне транзакции БД.
+### Hall layout
 
-### План зала
+16 tables plus 5 individual seats at the bar, 59 seats in total. Tables seat 2,
+4 or 6 and the arrangement mirrors the real floor plan. It lives in code
+([seed.js](backend/src/db/seed.js)) rather than the database and is rebuilt on
+every server start, keyed by table label and seat number. Seats that already
+have bookings are left untouched.
 
-16 столов + 5 отдельных мест у барной стойки, 59 мест суммарно. Столы на 2, 4 и
-6 мест, раскладка повторяет реальную схему паба и задана в коде
-([seed.js](backend/src/db/seed.js)), а не в БД — пересобирается при каждом
-старте сервера по ключу «столик + номер места». Места, на которые уже есть
-брони, не трогаются.
+Guests no longer pick seats anywhere, so the map is only reachable through the
+admin panel — see [What's still in the code](#whats-still-in-the-code).
 
-На телефоне нажатие на столик открывает попап с его стульями — на узком экране
-кружки мест слишком близко друг к другу, чтобы попадать по ним пальцем. У мест
-за баром попапа нет, они выбираются напрямую.
+## Reminders and arrival checks
 
-## Напоминания и проверка прихода
+Every 10 minutes [reminderScheduler.js](backend/src/services/reminderScheduler.js)
+sweeps the bookings. **All of this applies to free events only** (`e.price = 0`);
+guests who bought a ticket are assumed to turn up.
 
-Раз в 10 минут [reminderScheduler.js](backend/src/services/reminderScheduler.js)
-проверяет брони. **Всё это работает только для бесплатных мероприятий**
-(`e.price = 0`) — у купивших билет предполагается, что они придут.
+Unconfirmed bookings go through three stages:
 
-Три ступени для неподтверждённых броней:
+- **≤ `REMINDER_HOURS_BEFORE`** (12 h) — a reminder with two link buttons,
+  "confirm" and "can't make it" (`/rsvp/<ref>/confirm` and `/decline`).
+- **≤ `REMINDER_SECOND_HOURS_BEFORE`** (6 h) — the same again if there was no
+  answer.
+- **≤ `REMINDER_CANCEL_HOURS_BEFORE`** (3 h) — still no answer, so the booking
+  is cancelled automatically, the seat is released, the guest gets a short
+  rhymed apology and staff are notified.
 
-- **≤ `REMINDER_HOURS_BEFORE`** (12 ч) — напоминание с кнопками-ссылками
-  «✅ Подтверждаю» / «❌ Не смогу прийти» (`/rsvp/<бронь>/confirm` и `/decline`).
-- **≤ `REMINDER_SECOND_HOURS_BEFORE`** (6 ч) — повтор, если ответа не было.
-- **≤ `REMINDER_CANCEL_HOURS_BEFORE`** (3 ч) — бронь снимается автоматически,
-  место освобождается, гостю уходит сообщение-четверостишье, персоналу —
-  уведомление.
+Following the link *is* the action — no extra click on the site. A stale link
+honestly reports that the booking is no longer active.
 
-Переход по ссылке сам по себе и есть действие — отдельного клика на сайте не
-нужно. По неактуальной ссылке сайт честно покажет «Бронь больше не активна».
+Separately, **at the exact moment the event starts**, confirmed bookings are
+asked "are you here?" with two buttons
+([arrival.js](backend/src/routes/arrival.js)). With no reply within
+`ARRIVAL_CHECK_GRACE_MINUTES` (30) the booking is released and the table goes
+to the waiting list.
 
-Отдельно от этой схемы: **ровно в момент начала мероприятия** подтверждённым
-броням уходит вопрос «Вы уже здесь?» с кнопками «✅ Я уже здесь» / «❌ Не успею»
-([arrival.js](backend/src/routes/arrival.js)). Если за
-`ARRIVAL_CHECK_GRACE_MINUTES` (30) ответа нет — бронь снимается, место уходит в
-лист ожидания.
+## Post-visit survey
 
-## Опрос по итогам визита
+`SURVEY_HOURS_AFTER_EVENT` (18) hours after the event starts, guests with a
+`paid` booking receive a link to a form: four 1–5 ratings (service, food,
+drinks, overall) plus an optional comment.
 
-Через `SURVEY_HOURS_AFTER_EVENT` (18) часов после начала мероприятия гостю с
-броней `paid` уходит ссылка на форму: 4 оценки 1–5 (обслуживание, еда, напитки,
-общее впечатление) плюс необязательный текст.
+The link goes out over Telegram — every confirmed booking has a
+`telegram_chat_id`, because confirmation only happens through the bot.
 
-Ссылка идёт в Telegram: `telegram_chat_id` есть у всех подтверждённых броней,
-потому что подтверждаются они только через бота. Ветка с email в коде осталась,
-но на деле не срабатывает (см. «Почта»). Ответы сразу уходят в чат персонала как
-`#Опрос` (оценки полосками в моноширинном блоке, дата в формате ДД.ММ.ГГГГ) и
-`#отзыв` (текст). По понедельникам 09:00–12:00 по Анталии туда же уходит сводка
-средних баллов за 7 дней.
+Answers are forwarded to the staff chat immediately as `#Опрос` (ratings drawn
+as bars in a monospace block, date as DD.MM.YYYY) and `#отзыв` (the comment).
+Every Monday between 09:00 and 12:00 Antalya time, a weekly average is posted to
+the same chat.
 
-Если хотя бы одна оценка ≤ 3 — отдельным сообщением **«⚠️ Низкая оценка»** с
-контактом гостя: кликабельный @username в Telegram, иначе email, иначе прямо
-написано, что контакта нет. То же видно в админке на вкладке «Отзывы» — такие
-строки подсвечены.
+If any rating is 3 or lower, a separate **"low rating"** message carries the
+guest's contact: a clickable Telegram @username, otherwise their email,
+otherwise an explicit note that there is no contact. The same is visible in the
+admin panel under Reviews, where those rows are highlighted.
 
-## Лист ожидания
+## Waiting list
 
-Если на выбранное число гостей нет свободных столиков, вместо формы брони
-показывается «Встать в лист ожидания». При любом освобождении места
-уведомляются **все** ожидающие сразу — без очереди: кто первый забронирует, тот
-и получит стол. Повторные уведомления по одному событию не чаще раза в 10 минут,
-в каждом есть ссылка «отписаться».
+When no table fits the requested party size, the booking page offers to join the
+waiting list instead. When a seat frees up, **everyone waiting is notified at
+once** — no queue, first to book gets the table. Repeat notifications for the
+same event are rate-limited to once per 10 minutes and each one carries an
+unsubscribe link.
 
-## Почта
+## Email
 
-**Почтовый сервис проекту не нужен и подключать его не планируется.** Письма с
-билетами гостям отправляет площадка продажи билетов, а всё остальное общение с
-гостем идёт через Telegram-бота: подтверждение брони, напоминания, вопрос «Вы
-уже здесь?», ссылка на опрос.
+**The project needs no mail service and none is planned.** Ticket emails are
+sent by the ticketing platform, and everything else reaches the guest through
+the Telegram bot: booking confirmation, reminders, the arrival check and the
+survey link.
 
-`EMAIL_PROVIDER=console` —
-[ConsoleEmailService.js](backend/src/services/email/ConsoleEmailService.js)
-только пишет письмо в `backend/data/emails/*.html` и никуда его не отправляет.
+`EMAIL_PROVIDER=console` means
+[ConsoleEmailService.js](backend/src/services/email/ConsoleEmailService.js) only
+writes messages to `backend/data/emails/*.html` and sends nothing.
 
-Единственное место, где это заметно: **лист ожидания**. Форма до сих пор требует
-email, и если гость не привязал Telegram, уведомление об освободившемся месте
-ему не придёт. Либо email в этой форме заменить на обязательный Telegram, либо
-принять, что лист ожидания работает только для гостей с ботом.
+One place where this is still visible: the **waiting list** form asks for an
+email, so a guest who never linked Telegram will not hear that a table opened
+up. See [Known rough edges](#known-rough-edges).
 
-## Медиа
+## Media
 
-Все картинки и видео готовятся заранее и кладутся на сайт уже сжатыми.
+Images and video are compressed ahead of time, never on the server.
 
-**Рабочая папка `media/`** — `source/` (исходники) и `converted/` (результат),
-обе в `.gitignore`, в репозиторий не попадают. Конвертер —
-[tools/convert-media.js](tools/convert-media.js) поверх ffmpeg: картинки в
-`.webp` (q82), видео в `.webm` (VP9 + libopus). Флаги: `--force`, `--max-width`,
-`--crf`, `--mute`, `--keep-names`. Если результат получился тяжелее исходника,
-скрипт об этом предупреждает. Подробнее — [media/README.md](media/README.md).
+**Working folder `media/`** — `source/` and `converted/`, both gitignored. The
+converter is [tools/convert-media.js](tools/convert-media.js) on top of ffmpeg:
+images to `.webp` (q82), video to `.webm` (VP9 + libopus). Flags: `--force`,
+`--max-width`, `--crf`, `--mute`, `--keep-names`. It warns when the output ends
+up larger than the source. Details in [media/README.md](media/README.md).
 
-**Видео на главной** — зациклённый беззвучный фон на весь экран, с отдельной
-облегчённой версией для телефонов ([hero-video.js](frontend/js/hero-video.js)).
+**Homepage background** — a looping, muted, full-screen video with a separate
+lightweight cut for phones ([hero-video.js](frontend/js/hero-video.js)).
 
-**Меню** — страницы лежат в двух форматах: `.webp` (примерно вдвое легче) и
-`.jpg` как запасной для iOS младше 14. Поддержку webp
-[menu-gallery.js](frontend/js/menu-gallery.js) проверяет 1×1 картинкой прямо в
-коде, без запроса к серверу.
+**Menu pages** ship in two formats: `.webp` (about half the weight) and `.jpg`
+as a fallback for iOS below 14.
+[menu-gallery.js](frontend/js/menu-gallery.js) detects webp support with a 1×1
+inline image, without a round trip to the server.
 
-## Админка
+## Admin panel
 
-Мероприятия (заголовок, описание, дата/время, цена, ссылка на оплату, одна зона
-загрузки фото ИЛИ видео), меню на 3 языках, план зала, брони, отзывы.
+Events (title, description, date/time, price, ticket link, one upload zone for
+either a photo or a video), the three-language menu, the hall layout, bookings
+and survey results.
 
-**Мероприятия ведутся через админку на Render** — создавать, редактировать и
-удалять их нужно там, деплой для этого не требуется.
+**Events are managed here**, on the live site — no deploy required. The one
+exception is a handful of early events hardcoded in
+[seed.js](backend/src/db/seed.js) (dated August–September 2026):
+`seedPersistentEvents()` restores them by `slug` on every server start, so they
+have to be edited in code. Events created through the admin panel are never
+touched. Once those records stop being useful, the function can simply be
+deleted.
 
-Исключение — несколько старых мероприятий, зашитых в
-[seed.js](backend/src/db/seed.js) ещё на этапе разработки (LIVE MUSIC, DJ
-RasuLove, Street Players, «Тихий вечер», ЯБАНДЖИ Standup, даты август–сентябрь
-2026). `seedPersistentEvents()` при каждом старте сервера восстанавливает именно
-их по `slug`, поэтому править их через админку бессмысленно — менять нужно в
-коде. **Мероприятий, созданных через админку, это не касается вообще.** Когда
-старые записи перестанут быть нужны, блок `seedPersistentEvents()` можно просто
-удалить.
+## Hosting
 
-## Хостинг
+**Render**, Starter plan (~$7/mo) plus a 1 GB persistent disk (~$0.25/mo).
+Configured in [render.yaml](render.yaml); deploys on `git push`.
 
-Код: https://github.com/aquaticTurtle1/my-friends-pub-antalya (приватный).
+Create it with New → Blueprint and pick this repository. Render reads
+`render.yaml` and only asks for `ADMIN_PASSWORD`. If the service already exists
+and the disk is added later, Render may want it confirmed through the UI:
+Settings → Disks → Add Disk, mount path `/var/data`, 1 GB.
 
-**Render, тариф Starter** (~$7/мес) + постоянный диск 1 ГБ (~$0.25/мес).
-Конфиг — [render.yaml](render.yaml), деплой — `git push`.
+**Why a paid plan.** On the free tier the disk is ephemeral: `mfp.sqlite`, with
+every booking and survey in it, is recreated from scratch on each deploy, and
+the service sleeps after ~15 minutes of inactivity, which would delay
+reminders. Starter does not sleep, and a disk mounted at `/var/data` (the
+`DATA_DIR` variable) survives deploys and restarts.
 
-Создание: New → Blueprint → выбрать репозиторий. Render подхватит `render.yaml`
-сам, вручную попросит только `ADMIN_PASSWORD`. Если сервис уже есть, а диск
-добавляется позже — Render может потребовать подтвердить это через UI:
-Settings → Disks → Add Disk, mount path `/var/data`, 1 ГБ.
+That disk holds uploads too: [upload.js](backend/src/middleware/upload.js)
+writes them under `DATA_DIR/uploads/...` rather than `frontend/assets/`, which
+is recreated from git on every deploy. They are served from a separate
+`/uploads/...` route.
 
-**Почему платный тариф.** На бесплатном диск эфемерный: `mfp.sqlite` с бронями и
-отзывами пересоздаётся с нуля при каждом деплое, а сервис засыпает после ~15
-минут простоя — напоминания уходили бы с опозданием. Starter не спит, а диск на
-`/var/data` (переменная `DATA_DIR`) переживает деплои и рестарты.
-
-Диск держит и базу, и файлы из админки:
-[upload.js](backend/src/middleware/upload.js) пишет их в `DATA_DIR/uploads/...`,
-а не в `frontend/assets/` — та папка пересоздаётся из git при каждом деплое.
-Отдаются они отдельным роутом `/uploads/...`.
-
-### Переменные окружения
+### Environment variables
 
 ```
-TELEGRAM_BOT_TOKEN=...           # от @BotFather, секрет
-TELEGRAM_BOT_USERNAME=...        # без @
-TELEGRAM_STAFF_CHAT_ID=          # рабочий чат: #бронь, #Опрос, #отзыв, отмены
+TELEGRAM_BOT_TOKEN=...           # from @BotFather, secret
+TELEGRAM_BOT_USERNAME=...        # without @
+TELEGRAM_STAFF_CHAT_ID=          # staff chat for bookings, surveys, cancellations
 REMINDER_HOURS_BEFORE=12
 REMINDER_SECOND_HOURS_BEFORE=6
 REMINDER_CANCEL_HOURS_BEFORE=3
 REMINDER_RECHECK_HOURS_BEFORE=4
-ARRIVAL_CHECK_GRACE_MINUTES=30   # ожидание ответа на «Вы уже здесь?»
+ARRIVAL_CHECK_GRACE_MINUTES=30   # how long to wait for an "are you here?" reply
 SURVEY_HOURS_AFTER_EVENT=18
 SEAT_HOLD_MINUTES=10
-PUBLIC_BASE_URL=...              # на Render не нужен — берётся из RENDER_EXTERNAL_URL
+PUBLIC_BASE_URL=...              # not needed on Render — taken from RENDER_EXTERNAL_URL
 ```
 
-Вебхук Telegram сервер регистрирует сам при старте, если заданы токен и публичный
-адрес. Вручную `setWebhook` вызывать не нужно.
+The server registers the Telegram webhook itself on start when a token and a
+public address are present; `setWebhook` never has to be called by hand.
 
-Без `TELEGRAM_STAFF_CHAT_ID` пересылка броней, ответов и сводок просто не
-отправляется — гость всё равно может пройти опрос, ответы остаются в БД.
+Without `TELEGRAM_STAFF_CHAT_ID`, staff forwarding and weekly summaries are
+simply skipped — guests can still take the survey and answers are stored.
 
-## База данных
+## Database
 
-SQLite, один файл, 10 таблиц: `admins`, `events`, `menu_categories`,
+SQLite, a single file, 10 tables: `admins`, `events`, `menu_categories`,
 `menu_items`, `hall_seats`, `bookings`, `booking_seats`, `surveys`, `kv_store`,
-`waitlist`. Схема — [schema.sql](backend/src/db/schema.sql).
+`waitlist`. Schema in [schema.sql](backend/src/db/schema.sql).
 
-Миграции идемпотентные: при старте
-[connection.js](backend/src/db/connection.js) проверяет `PRAGMA table_info` и
-при необходимости делает `ALTER TABLE`. Поэтому деплой с новой колонкой не ломает
-существующие данные.
+Migrations are idempotent: on start
+[connection.js](backend/src/db/connection.js) reads `PRAGMA table_info` and
+issues `ALTER TABLE` where needed, so deploying a new column never disturbs
+existing data.
 
-Время: Анталия — фиксированный UTC+3, даты мероприятий собираются как
-`new Date(\`${date}T${time}:00+03:00\`)`. `datetime('now')` в SQLite отдаёт
-наивную строку UTC, поэтому сравнения по времени делаются **в SQL**
-(`datetime('now','-N minutes')`), а не в JS — иначе строка разберётся как местное
-время.
+Time: Antalya is a fixed UTC+3, and event timestamps are built as
+``new Date(`${date}T${time}:00+03:00`)``. SQLite's `datetime('now')` returns a
+naive UTC string, so time comparisons are done **in SQL**
+(`datetime('now','-N minutes')`) — parsed in JavaScript that string would be
+read as local time.
 
-## Структура
+## Layout
 
 ```
-frontend/   html/ css/ js/ assets/ — статика сайта
+frontend/   html/ css/ js/ assets/ — the site itself
 backend/    server.js + src/{db,routes,services,ws,middleware}
-media/      рабочая папка конвертации (содержимое не в git)
+media/      media conversion workspace (contents gitignored)
 tools/      convert-media.js
+docs/       original project brief (Russian)
 ```
 
-## Что осталось в коде
+## What's still in the code
 
-Работающие остатки прежних решений. Сайт они не ломают, но и не используются.
+**The hall map.** Guests no longer choose seats: free events are booked through
+a form and paid ones are sold externally. The layout code — 16 tables, 5 bar
+seats, per-seat selection, a tap-to-open dialog on phones — is kept on purpose:
+the admin panel manages it, and it is ready if seat sales ever move in-house.
 
-**Внутренняя оплата.** Билеты продаются только на внешней площадке, поэтому
-собственный платёжный путь больше не нужен. В коде он пока цел:
-`routes/payments.js`, `services/payment/` с `MockPaymentProvider`,
-`payment.html` и `payment-success.html`, `PAYMENT_PROVIDER=mock` в `render.yaml`
-и `.env.example`. Вместе с ним — генерация билета с QR-кодом (`services/ticket.js`,
-зависимость `qrcode`): билеты теперь выдаёт площадка. Всё это планируется
-удалить. При удалении учесть, что `generateBookingRef` из `ticket.js` нужен
-бронированию и должен остаться.
+## Known rough edges
 
-**Схема зала.** Для бесплатных мероприятий её убрали, для платных — тоже, так
-как они уходят на внешнюю оплату. Код раскладки (16 столов, 5 мест у бара,
-выбор стульев, попап на мобильных) сохранён сознательно: он рабочий и может
-понадобиться, если появится своя продажа мест.
-
-## Известные нестыковки
-
-- На странице брони подсказка говорит «Место держится ещё 15 минут после этого
-  времени», а `ARRIVAL_CHECK_GRACE_MINUTES` сейчас 30. Текст и настройку стоит
-  свести к одному числу.
-- Форма листа ожидания требует email, хотя письма не отправляются (см. «Почта»).
+- The booking page says a table is held "for another 15 minutes", while
+  `ARRIVAL_CHECK_GRACE_MINUTES` is 30. The copy and the setting should agree.
+- The waiting list form requires an email although no mail is sent (see
+  [Email](#email)).
