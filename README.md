@@ -206,7 +206,7 @@ RasuLove, Street Players, «Тихий вечер», ЯБАНДЖИ Standup, д�
 
 ## Хостинг
 
-Код: https://github.com/zakinternational07-bot/my-friends-pub-antalya (приватный).
+Код: https://github.com/aquaticTurtle1/my-friends-pub-antalya (приватный).
 
 **Render, тариф Starter** (~$7/мес) + постоянный диск 1 ГБ (~$0.25/мес).
 Конфиг — [render.yaml](render.yaml), деплой — `git push`.
